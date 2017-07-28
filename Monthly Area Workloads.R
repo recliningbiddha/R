@@ -77,11 +77,11 @@ pacu.data$Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m")
 pacu.data$Day_Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m-%d")
 
 # Adverse events in ORMIS are:
-events.descriptors <- c("ANAES RESP INTERVENT", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PAIN R/V ANAES CONS", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICTION", "RETURN TO OR", "UNPLANNED ADMISS ICU", "ANTIEMETICS")
+events.descriptors <- c("ANAES RESP INTERVENT", "ANAES RESP INTERVENTION", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICATION", "RETURN TO OR", "UNPLANNED ADMISS ICU", "ANTIEMETICS")
 
-# Use PACU cases from MOT data for totals.
+# Use PACU cases from MOT data for pacu total cases per month
 events.adverse <- data.frame(matrix(NA, nrow=length(unique(mot.data$Month_Yr)), ncol=length(events.descriptors)+2))
-# Data frame had date as 1st col, then total PACU cases that month as 1 column and event totals as other columns.
+# Data frame had date as 1st col, then total PACU cases per month as 1 column and event totals as other columns.
 names(events.adverse) <- c("date","total.pacu.cases",events.descriptors)
 # add dates from mot.data to dates column. 
 events.adverse$date <- sort(unique(pacu.data$Month_Yr), decreasing=FALSE)
@@ -95,22 +95,39 @@ for (i in events.descriptors){
   t <- subset(t, t["Var2"]==TRUE)
   events.adverse[,i] <- t["Freq"]
 } # End for i loop
-# Consider improving by also searching for common strings entered in place of standard phrases
 
 # If no adverse events in a category the column will remain filled with NA - convert these to zero for calculations
 events.adverse[is.na(events.adverse)] <- 0
 
-# **Read QCC package documentation. some useful info re p plots and g plots. p plot requires sample size field. 
+# combine duplicate columns and drop excess
+events.adverse$"ANAES RESP INTERVENTION" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"ANAES RESP INTERVENTION"
+events.adverse$"ANAES RESP INTERVENT" <- NA
+events.descriptors <- events.descriptors[-("ANAES RESP INTERVENT")] # or events.descriptors <- names(events.adverse[2:length(events.adverse)]
+
+events.adverse$"ANAESTH R/V- PAIN" <- events.adverse$"PAIN R/V ANAES CONS" + events.adverse$"ANAESTH R/V- PAIN"
+events.adverse$"PAIN R/V ANAES CONS" <- NA
+events.descriptors <- events.descriptors[-("PAIN R/V ANAES CONS")] # or events.descriptors <- names(events.adverse[2:length(events.adverse)]
+
+# Consider also searching for common strings entered in place of standard phrases
+# grep useful for searching e.g. grep(string,df$col) returns vectors of rows with matches grep(string,df$col,ignore.case=TRUE, value=FALSE/TRUE)
+# grep may be useful for searching for strings and returning vector of matching rows so identify entries that don't match preset strings exactly but still useful.
+
 # Respiratory event = Anaes intervent + Cardio/ Resp Arrest + Reintub + Resp Complication
+events.descriptors <- c(events.descriptors, "Resp Event", "Resp Serious", "Resp V Serious")
+events.adverse$"Resp Event" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION" + events.adverse$"RESP COMPLICATION"
 # Serious Resp event = Anaes intervent + Cario Resp Arrest + Reintub
+events.adverse$"Resp Serious" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION"
 # V Serous Resp Event = Arrest + Reintub
+events.adverse$"Resp V Serious" <- events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION"
+
+# **Read QCC package documentation. some useful info re p plots and g plots. p plot requires sample size field. 
 
 # Do plots for each event descriptor & write to pdf
 ## improve by adding warning limits and colour change if exceed bounds
 for (i in events.descriptors){
   ## setwd(output.directory)
   ## filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
-  ## filename <- paste(filename.prefix, "MOT-throughput-barplot.pdf")
+  ## filename <- paste(filename.prefix, i," qcc.pdf")
   ## pdf(filename, height = 7, width =12 )
 
     qcc(events.adverse[i],
@@ -126,9 +143,13 @@ for (i in events.descriptors){
   } # end for i
 
 # Use qcc g plot for plot of days between events
-# code for calculating days between infrequent events
 # use for return to or, cardiac arrest, reintubation, unplanned admiss icu - at this stage might need to comsider large data set so longer time span analysed
+# qcc(events.adverse[,5], type="g", axes.las=2, add.stats=FALSE)
+
+# code for calculating days between infrequent events
 # pacu.data[which(pacu.data$Answer==events.descriptors[2]),"Day_Month_Yr"]
+# grep may be useful for searching for strings and returning vector of matching rows
+
 
 # Reset working directory to functions.directory so history etc saved there on exit.
 setwd(functions.directory)
