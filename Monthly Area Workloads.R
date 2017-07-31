@@ -16,9 +16,9 @@ pacu.data.directory  <- "~/MEGAsync/QA\ Data/Data/PACU\ Data"
 output.directory     <- "~/MEGAsync/QA\ Data/Data/Output"
 
 # Load required functions and routines
-setwd(functions.directory)
 source_url("https://raw.githubusercontent.com/vxoli/R/master/Load%20%26%20Combine.R")
 source_url("https://raw.githubusercontent.com/vxoli/R/master/export_formattable.R")
+#setwd(functions.directory)
 #source("Load\ &\ Combine.R")
 
 # Retrieve MOT Data
@@ -162,6 +162,8 @@ events.descriptors <- names(events.adverse[2:length(events.adverse)])
 # Unplanned ICU admission should be calculated from the mot data detecting dispatity between
 # planned discharge ward and actual discharge ward
 
+# Remove unnecessary columns for charting etc or use new vector with only columns needed for charting
+
 # **Read QCC package documentation. some useful info re p plots and g plots. p plot requires sample size field. 
 
 # Do plots for each event descriptor & write to pdf
@@ -182,7 +184,7 @@ for (i in events.descriptors[2:length(events.descriptors)]){
       xlab= "Date",
       ylab = "Proportion",
       title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
-      )
+      ) # Close qcc
     dev.off()
   } # end for i
 
