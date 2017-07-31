@@ -156,7 +156,7 @@ events.adverse$"Resp V Serious" <- events.adverse$"CARDIO / RESP ARREST" + event
 names(events.adverse)[names(events.adverse)=="CARDIO / RESP ARREST"] <- "CARDIO-RESP ARREST"
 events.descriptors <- names(events.adverse[2:length(events.adverse)])
 # Change REINTUB/ VENTILATION as this label causes an error later when used for file nameing
-names(events.adverse)[names(events.adverse)=="REINTUB/ VENTILATION"] <- "REINTUB"
+names(events.adverse)[names(events.adverse)=="REINTUB/ VENTILATION"] <- "REINTUBATION"
 events.descriptors <- names(events.adverse[2:length(events.adverse)])
 
 # Unplanned ICU admission should be calculated from the mot data detecting dispatity between
@@ -164,13 +164,11 @@ events.descriptors <- names(events.adverse[2:length(events.adverse)])
 
 # Remove unnecessary columns for charting etc or use new vector with only columns needed for charting
 
-# **Read QCC package documentation. some useful info re p plots and g plots. p plot requires sample size field. 
-
 # Do plots for each event descriptor & write to pdf
 for (i in events.descriptors[2:length(events.descriptors)]){
   setwd(output.directory)
   filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
-  filename <- paste(filename.prefix, i," qcc.pdf")
+  filename <- paste(filename.prefix, i," p-chart.pdf")
   pdf(filename, height = 7, width =12 )
 
     qcc(events.adverse[i],
@@ -191,6 +189,32 @@ for (i in events.descriptors[2:length(events.descriptors)]){
 # Use qcc g-chart for plot of days between events
 # use for return to or, cardiac arrest, reintubation, unplanned admiss icu - at this stage might need to comsider large data set so longer time span analysed
 # qcc(events.adverse[,5],type="g", axes.las=2, add.stats=FALSE)
+events.infrequent.descriptors <- c(events.descriptors[13]) #Cardiac Arrest and Reintubation left off as seem to be zero and so cause error
+# g-charts
+for (i in events.infrequent.descriptors) {
+t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
+t <- subset(t, t["Var2"]==TRUE)
+events.infrequent <- t["Freq"]
+noevents <- diff(which(c(1,events.infrequent[,1])==1))-1
+
+setwd(output.directory)
+filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
+filename <- paste(filename.prefix, i," g-chart.pdf")
+#pdf(filename, height = 7, width =12 )
+t <- subset(t, t$Freq>=1)
+
+qcc(noevents,
+    type="g",
+    nsigmas=2,
+    labels=t[,"Var1"],
+    axes.las=2,
+    add.stats=FALSE,
+    xlab= "Date",
+    ylab = "Days between",
+    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+) # Close qcc
+#dev.off()
+} # Close For i
 
 # code for calculating days between infrequent events
 # pacu.data[which(pacu.data$Answer==events.descriptors[2]),"Day_Month_Yr"]
