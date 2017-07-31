@@ -9,17 +9,6 @@ library("formattable")
 library("htmltools")
 library("webshot")    
 
-export_formattable <- function(f, file, width = "100%", height = NULL, 
-                               background = "white", delay = 0.2)
-{
-  w <- as.htmlwidget(f, width = width, height = height)
-  path <- html_print(w, background = background, viewer = NULL)
-  url <- paste0("file:///", gsub("\\\\", "/", normalizePath(path)))
-  webshot(url,
-          file = file,
-          selector = ".formattable_widget",
-          delay = delay)
-}
 # Set directories
 anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
 functions.directory  <- "~/MEGAsync/QA\ Data/R Functions"
@@ -29,6 +18,7 @@ output.directory     <- "~/MEGAsync/QA\ Data/Data/Output"
 # Load required functions and routines
 setwd(functions.directory)
 source_url("https://raw.githubusercontent.com/vxoli/R/master/Load%20%26%20Combine.R")
+source_url("https://raw.githubusercontent.com/vxoli/R/master/export_formattable.R")
 #source("Load\ &\ Combine.R")
 
 # Retrieve MOT Data
