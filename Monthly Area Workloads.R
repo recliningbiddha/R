@@ -172,12 +172,17 @@ for (i in events.descriptors[2:length(events.descriptors)]){
     qcc(events.adverse[i],
       type="p",
       sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
       labels=events.adverse$date,
       axes.las=2,
       data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
-      add.stats=FALSE)
+      add.stats=FALSE,
+      xlab= "Date",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      )
   
-  dev.off()
+    dev.off()
   
   } # end for i
 
@@ -208,40 +213,40 @@ for (i in events.descriptors[2:length(events.descriptors)]){
 # 5.2 Post-op epidurals reviewed by anaesthetist daily
 #
 
-ACHS.3.1 <- percent(sum(events.adverse$`Resp V Serious`) / sum(monthlycases[,"PACU"]))
-ACHS.3.2 <- percent(sum(events.adverse$PONV) / sum(monthlycases[,"PACU"]))
-ACHS.3.3 <- percent(sum(events.adverse$`HYPOTHERMIA <36 DEG`) / sum(monthlycases[,"PACU"]))
-ACHS.3.4 <- percent(sum(events.adverse$`Pain Revew`) / sum(monthlycases[,"PACU"]))
-ACHS.3.5 <- percent(sum(events.adverse$`PROLONGED STAY >2 HR`) / sum(monthlycases[,"PACU"]))
+ACHS.2.1 <- percent(length(mot.data[,"Tech.1.Name"])/length(mot.data[,"Anaes.1.Name"]))
+ACHS.3.1 <- percent(sum(events.adverse$`Resp V Serious`) / sum(monthlycases[,"PACU"]),format="d")
+ACHS.3.2 <- percent(sum(events.adverse$PONV) / sum(monthlycases[,"PACU"]),format="d")
+ACHS.3.3 <- percent(sum(events.adverse$`HYPOTHERMIA <36 DEG`) / sum(monthlycases[,"PACU"]),format="d")
+ACHS.3.4 <- percent(sum(events.adverse$`Pain Revew`) / sum(monthlycases[,"PACU"]),format="d")
+ACHS.3.5 <- percent(sum(events.adverse$`PROLONGED STAY >2 HR`) / sum(monthlycases[,"PACU"]),format="d")
 
 ACHS.table <- data.frame(
-  # id = Row Labels
-  Indicator = c(
-    # 1.1 Pre-anesthetic consultation by anaesthetist
-    # 1.2 Smoking cessation advice in pre-anaesthetic consultation
-    # 2.1 Presence of trained assistant
-    # 2.2 Documentation complies with ANZCA PS6
-    # 2.3 Stop-before you block procedure
-    # 2.4 Prophlactic antiemetics administered to patients wit a history
-    "3.1 Relief of respiratory distress in recovery",
-    "3.2 PONV treatment in PACU",
-    "3.3 Temp < 36C",
-    "3.4 Pain not responding to protocol",
-    "3.5 Unplanned stay > 2 hrs"
-     # 4.1 Unplanned admission to ICU
-     # 4.2 Documented handover MOT-PACU
-     # 4.3 Documented handover PACU-Ward
-     # 5.1 Pain scores recorded for surg ical patients
-     # 5.2 Post-op epidurals reviewed by anaesthetist daily
-    ), # Close id
-  Value = c(ACHS.3.1, ACHS.3.2, ACHS.3.3, ACHS.3.4, ACHS.3.5)
-  
+  Indicator = c("2.1 Presence of trained assistant",
+                "3.1 Relief of respiratory distress in recovery",
+                "3.2 PONV treatment in PACU",
+                "3.3 Temp < 36C",
+                "3.4 Pain not responding to protocol",
+                "3.5 Unplanned stay > 2 hrs"
+    ),
+  Numerator = c(length(mot.data[,"Tech.1.Name"]), 
+                sum(events.adverse$`Resp V Serious`),
+                sum(events.adverse$PONV),
+                sum(events.adverse$`HYPOTHERMIA <36 DEG`),
+                sum(events.adverse$`Pain Revew`),
+                sum(events.adverse$`PROLONGED STAY >2 HR`)),
+  Denominator = c(length(mot.data[,"Anaes.1.Name"]),
+                  sum(monthlycases[,"PACU"]),
+                  sum(monthlycases[,"PACU"]),
+                  sum(monthlycases[,"PACU"]),
+                  sum(monthlycases[,"PACU"]),
+                  sum(monthlycases[,"PACU"])),
+  Value = c(ACHS.2.1, ACHS.3.1, ACHS.3.2, ACHS.3.3, ACHS.3.4, ACHS.3.5)
 ) # Close ACHS.table <- df
 # Write table to pdf
 setwd(output.directory)
 filename <- paste(filename.prefix, " ACHS Indicators.pdf")
 #pdf(filename, height = 7, width =12 )
-export_formattable(formattable((ACHS.table), align="l"), filename)
+export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 # dev.off()
 # CLEAN UP before ending.
 # Reset working directory to functions.directory so history etc saved there on exit.
