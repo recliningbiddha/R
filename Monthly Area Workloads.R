@@ -159,10 +159,12 @@ events.descriptors <- names(events.adverse[2:length(events.adverse)])
 names(events.adverse)[names(events.adverse)=="REINTUB/ VENTILATION"] <- "REINTUB"
 events.descriptors <- names(events.adverse[2:length(events.adverse)])
 
+# Unplanned ICU admission should be calculated from the mot data detecting dispatity between
+# planned discharge ward and actual discharge ward
+
 # **Read QCC package documentation. some useful info re p plots and g plots. p plot requires sample size field. 
 
 # Do plots for each event descriptor & write to pdf
-## improve by adding warning limits and colour change if exceed bounds
 for (i in events.descriptors[2:length(events.descriptors)]){
   setwd(output.directory)
   filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
@@ -181,9 +183,7 @@ for (i in events.descriptors[2:length(events.descriptors)]){
       ylab = "Proportion",
       title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
       )
-  
     dev.off()
-  
   } # end for i
 
 # Use qcc g-chart for plot of days between events
