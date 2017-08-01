@@ -76,13 +76,16 @@ dev.off()
 setwd(pacu.data.directory)
 pacu.data <- CombineAll()
 # Normalise dates & accomodate the timestamp field
-pacu.data$date <- as.character(pacu.data$In.Recovery.At)
+# pacu.data$date <- as.character(pacu.data$In.Recovery.At) - do i need this line???
 pacu.data$date <- as.Date(pacu.data$In.Recovery.At,format = "%d/%m/%Y  %I:%M:%S %p")
 pacu.data$Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m")
 pacu.data$Day_Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m-%d")
+pacu.data$Answer <- as.character(pacu.data$Answer)
+pacu.data$Patient.First.Name <- as.character(pacu.data$Patient.First.Name)
+pacu.data$Patient.Last.Name <- as.character(pacu.data$Patient.Last.Name)
 
 # Adverse events in ORMIS are:
-events.descriptors <- c("ANAES RESP INTERVENT", "ANAES RESP INTERVENTION", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICATION", "RETURN TO OR", "UNPLANNED ADMISS ICU", "ANTIEMETICS", "ANAESTH R/V- PAIN", "PAIN R/V ANAES CONS")
+events.descriptors <- c("ANAES RESP INTERVENT", "ANAES RESP INTERVENTION", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICATION", "RETURN TO OR", "UNPLANNED ADMISSION ICU", "ANTIEMETICS", "ANAESTH R/V- PAIN", "PAIN R/V ANAES CONS")
 
 # Use PACU cases from MOT data for pacu total cases per month
 events.adverse <- data.frame(matrix(NA, nrow=length(unique(mot.data$Month_Yr)), ncol=length(events.descriptors)+2))
@@ -104,15 +107,6 @@ for (i in events.descriptors){
 # events.adverse[,i] <- with(pacu.data, tapply(pacu.data$Answer==i, pacu.data$Month_Yr, FUN=function(x) length(unique(x))))
 # If no adverse events in a category the column will remain filled with NA - convert these to zero for calculations
 events.adverse[is.na(events.adverse)] <- 0
-
-#Now do counts of infrequent events by day
-#events.infrequent.descriptors <- c(events.descriptors[4], events.descriptors[11], events.descriptors[13]) #Cardiac Arrest, Reintubation, Return to OR
-#for (i in events.infrequent.descriptors) {
-#  t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
-#  t <- subset(t, t["Var2"]==TRUE)
-#  events.infrequent <- t["Freq"]
-#  noevents[i] <- diff(which(c(1,events.infrequent[,1])==1))-1
-#}
 
 # combine duplicate columns and drop excess
 # Respiatory Intervention
@@ -163,17 +157,21 @@ events.adverse$"Resp Serious" <- events.adverse$"ANAES RESP INTERVENT" + events.
 # Change CARDIO / RESP ARREST as this label causes an error later when used for file nameing
 names(events.adverse)[names(events.adverse)=="CARDIO / RESP ARREST"] <- "CARDIO-RESP ARREST"
 events.descriptors <- names(events.adverse[2:length(events.adverse)])
+# Update pacu.data$Answer with new event name
+pacu.data$Answer[grep("CARDIO / RESP ARREST", pacu.data$Answer, ignore.case=TRUE)] <- as.character("CARDIO-RESP ARREST")
 # Change REINTUB/ VENTILATION as this label causes an error later when used for file nameing
 names(events.adverse)[names(events.adverse)=="REINTUB/ VENTILATION"] <- "REINTUBATION"
 events.descriptors <- names(events.adverse[2:length(events.adverse)])
+# Update pacu.data$Answer with new event name
+pacu.data$Answer[grep("REINTUB/ VENTILATION", pacu.data$Answer, ignore.case=TRUE)] <- as.character("REINTUBATION")
 
 # Unplanned ICU admission should be calculated from the mot data detecting dispatity between
 # planned discharge ward and actual discharge ward
 
 # Remove unnecessary columns for charting etc or use new vector with only columns needed for charting
 # Update the event descriptors in the vector
-events.infrequent.descriptors <- c(events.descriptors[4], events.descriptors[11], events.descriptors[13]) #Cardiac Arrest, Reintubation, Return to OR
-events.to.skip <- c(events.descriptors[7], events.descriptors[9], events.descriptors[10],events.descriptors[14], events.descriptors[19], events.infrequent.descriptors) # Other, Prolonged Unconc, Reaction, Resp V Serious, Unplanned ICU
+events.infrequent.descriptors <- c(events.descriptors[4], events.descriptors[11], events.descriptors[13],events.descriptors[14]) #Cardiac Arrest, Reintubation, Return to OR, Unplanned ICU
+events.to.skip <- c(events.descriptors[7], events.descriptors[9], events.descriptors[10], events.descriptors[19], events.infrequent.descriptors) # Other, Prolonged Unconc, Reaction, Resp V Serious
 
 # Do plots for each event descriptor & write to pdf
 for (i in events.descriptors[2:length(events.descriptors)]){
@@ -200,13 +198,13 @@ for (i in events.descriptors[2:length(events.descriptors)]){
 
 # Use qcc g-chart for plot of days between events
 # use for return to or, cardiac arrest, reintubation, unplanned admiss icu - might need to consider larger data set so longer time span analysed
-events.infrequent.descriptors <- c(events.descriptors[13]) #Cardiac Arrest and Reintubation left off as seem to be zero and so cause error
-# g-charts
+# Plot g-charts
 for (i in events.infrequent.descriptors) {
+  if (i %in% (events.infrequent.descriptors[2])) next
  t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
  t <- subset(t, t["Var2"]==TRUE)
  events.infrequent <- t["Freq"]
- noevents <- diff(which(c(1,events.infrequent[,1])==1))-1
+ noevents <- diff(which(c(1,events.infrequent[,1])>=1))-1
 
 setwd(output.directory)
 filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
