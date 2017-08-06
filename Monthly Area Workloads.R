@@ -1,5 +1,9 @@
+# WRITTEN BY CHRISTOPHER STONELL 2017
+# GENERATES ACHS INDICATORS AND CONTROL CHARTS FOR PACU INDICATORS
+
 # clear workspace
 rm(list=ls())
+
 # Load required libraries
 library("gridExtra")
 library("devtools")
@@ -7,7 +11,8 @@ library("devtools")
 library("qcc")
 library("formattable")
 library("htmltools")
-library("webshot")    
+library("webshot")
+library("knitr")
 
 # Set directories
 anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
@@ -56,20 +61,20 @@ barplot(t(monthlycases),
         )
 dev.off()
 
-# Write table of Activity by Specialty
+# Write table of Activity by Specialty sorted by specialty
 # **These tables need formatting
 ## setwd(output.directory)
 ## filename <-paste(filename.prefix, "Activity-by-Specialty.pdf")
 ## pdf(filename, height=13, width=25)
-## grid.table(table(mot.data$Month_Yr, mot.data$Specialty.Desc))
+## table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mot.data$Month_Yr, mot.data$Specialty.Desc)))][,1:5]
 ## dev.off()
 
-# Write table of Individual activity
+# Write table of Individual activity sorted by surname
 # **This table needs formatting
 ## setwd(output.directory)
 ## filename <- paste(filename.prefix, "Activity-by-Anaesthetist.pdf")
 ## pdf(filename, height=13, width=50)
-## grid.table(table(mot.data$Month_Yr, mot.data$Anaes.1.Name))
+## table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,32:35]
 ## dev.off()
 
 # Start analysis of PACU data
@@ -174,8 +179,9 @@ events.infrequent.descriptors <- c(events.descriptors[4], events.descriptors[11]
 events.to.skip <- c(events.descriptors[7], events.descriptors[9], events.descriptors[10], events.descriptors[19], events.infrequent.descriptors) # Other, Prolonged Unconc, Reaction, Resp V Serious
 
 # Do plots for each event descriptor & write to pdf
-for (i in events.descriptors[2:length(events.descriptors)]){
-  if (i %in% events.to.skip) next
+events.to.chart <- events.descriptors[! events.descriptors %in% events.to.skip]
+events.to.chart <- events.to.chart[2:length(events.to.chart)]
+for (i in events.to.chart){
   setwd(output.directory)
   filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
   filename <- paste(filename.prefix, i," p-chart.pdf")
@@ -214,7 +220,8 @@ t <- subset(t, t$Freq>=1)
 
 qcc(noevents,
     type="g",
-    nsigmas=2,
+    #nsigmas=3,
+    conf=0.9,
     labels=t[,"Var1"],
     axes.las=2,
     add.stats=FALSE,

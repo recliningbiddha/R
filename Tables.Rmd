@@ -1,0 +1,539 @@
+---
+title: "Control Charts & ACHS Indicator Tables"
+author: Christopher Stonell
+date: "`r format(Sys.time(), '%d %B %Y')`"
+output: 
+  ioslides_presentation:
+  fig_caption: true
+
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+# WRITTEN BY CHRISTOPHER STONELL 2017
+# GENERATES ACHS INDICATORS AND CONTROL CHARTS FOR PACU INDICATORS
+
+# clear workspace
+rm(list=ls())
+
+# Load required libraries
+library("gridExtra")
+library("devtools")
+library("qcc")
+library("formattable")
+library("htmltools")
+library("webshot")
+library("knitr")
+
+
+# Set directories
+anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
+functions.directory  <- "~/MEGAsync/QA\ Data/R Functions"
+pacu.data.directory  <- "~/MEGAsync/QA\ Data/Data/PACU\ Data"
+output.directory     <- "~/MEGAsync/QA\ Data/Data/Output"
+
+# Load required functions and routines
+# source_url("https://raw.githubusercontent.com/vxoli/R/master/Load%20%26%20Combine.R")
+#setwd(functions.directory)
+source("Load\ &\ Combine.R")
+#setwd(functions.directory)
+
+# Retrieve MOT Data
+setwd(anaes.data.directory)
+mot.data <- CombineAll()
+setwd(functions.directory)
+
+#CLEAN DATA
+# Modify dates from excel to work in R
+mot.data$date = as.character(mot.data$Operation.Date)
+mot.data$date = as.Date(mot.data$Operation.Date,format = "%d-%b-%Y")
+mot.data$Month_Yr <- format(as.Date(mot.data$date), "%Y-%m")
+# Correct PACU.ICU.WARD variable (appears as pacu.icu.ward & icu.pacu.ward - combined into pacu.icu.ward)
+mot.data$PACU.ICU.WARD <- replace(mot.data$PACU.ICU.WARD, (mot.data$PACU.ICU.WARD == "HOME" | mot.data$PACU.ICU.WARD == "WARD"), "PACU")
+monthlycases <- table(mot.data$Month_Yr, mot.data$PACU.ICU.WARD)[,c("ICU","PACU")]
+```
+# Workloads through MOT
+
+## Monthly Thru-put seperated by destination
+```{r workloads, echo = FALSE}
+library(knitr)
+## Plot and save stacked barplot of MOT monthly activity seperated into ICU and PACU 
+# **consider using a function called with filename properties to open the file and close after plot**
+barplot(t(monthlycases), 
+        ylab="# cases/ month", 
+        las=2, 
+        main=paste("Cases through MOT by month\nSeperated by discharge to ICU or PACU\nFor the period ",min(mot.data$Month_Yr)," to ",max(mot.data$Month_Yr)), 
+        legend.text=c("ICU","PACU"),
+        args.legend = list(
+          x="topright",
+          inset=c(-0.04,0),
+          bty = "n"
+        )
+        )
+
+```
+
+##Workloads by Specialty
+
+##
+
+```{r write-tables Activity by Specialty, echo = FALSE}
+# Write table of Activity by Specialty
+
+kable(table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mot.data$Month_Yr, mot.data$Specialty.Desc)))][,1:5],format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Specialty
+
+kable(table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mot.data$Month_Yr, mot.data$Specialty.Desc)))][,6:10],format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Specialty
+
+kable(table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mot.data$Month_Yr, mot.data$Specialty.Desc)))][,11:13],format="html", pad=0)
+
+```
+
+##Workloads by Anaesthetist
+
+##
+
+```{r write tables activity by anaesthetist, echo = FALSE, fig.cap=TRUE}
+# Write table of Activity by Anaesthetist 1
+# Remove non-consultant names from Anaes.1.Name
+registrars <- c("ALVAREZ,Juan Sebastian Lopera","BACAJEWSK,Rafal","HUNG,David -  Registrar Anaesthetist","JONES,Alison","POLLARD,Amy","SMITH,Robert","COLLARD,Cameron - Anaes Regs", "LOPERA ALVAREZ,Juan Sebastian", "MEHMOOD,Junaid", "MCDERMOTT,Laura", "JONES,Tyson", "BELL,Cameron - Anaes Regs", "BURNELL,Sheena", "SHAW,Rebecca", "BEUTH,Jodie", "BURGESS,Tegan", "GUY,Louis", "LIM,Kian - Anaes Registrar", "PEARSON,Yana", "RANCE,Timothy","SOUNESS,Andrew", "WILLIAMS,Charles", "DAWAR,Ahmad", "CHAWLA,Gunjan", "HAENKE,Daniel","HUANG,Jason - Gastroenterologist", "RICKARDS,Leah", "TOGNOLINI,Angela", "WILLIAMS,Courtney", "EDWARDS,Lucas", "FERNANDEZ,Nevin", "HOLLAND,Tom", "KIPPIN,Louisa", "TURNER,Maryann", "JAMSHIDI,Behruz", "HUANG,Jason", "DASILVA,Dianna", "FARZADI,Maryam Zarhra", "FLINT,Nathan", "HERDY,Charles", "HOLGATE,Andrew")
+levels(mot.data$Anaes.1.Name) <- c(levels(mot.data$Anaes.1.Name), "SLYKERMAN,Julia", "Registrar")
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name %in% registrars] <- "Registrar"
+# Combine Duplicate Entries
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "COLLARD,Caroline - Anaes Cons"] <- "COLLARD,Caroline"
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "SLYKERMAN,Julia - Anaes Consultant"] <- "SLYKERMAN,Julia"
+
+# For purposes of tabling include "" in registrars
+registrars <- c("", registrars)
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,1:4], format="html", pad=0)
+#kable(mot.data$Month_Yr, mot.data$Anaes.1.Name)
+
+```
+
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 2
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,5:8], format="html", pad=0)
+
+```
+
+
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 3
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,9:12], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 4
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,13:16], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 5
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,17:19], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 6
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,20:23], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 7
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,24:27], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 8
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,28:31], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 9
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,32:35], format="html", pad=0)
+
+```
+
+##
+
+```{r echo = FALSE}
+# Write table of Activity by Anaesthetist 10
+
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,36:38], format="html", pad=0)
+
+```
+
+#Recovery Incident Control Charts
+
+##
+
+```{r PACU & Control Charts, echo = FALSE}
+
+# Start analysis of PACU data
+setwd(pacu.data.directory)
+pacu.data <- CombineAll()
+setwd(functions.directory)
+# Normalise dates & accomodate the timestamp field
+# pacu.data$date <- as.character(pacu.data$In.Recovery.At) - do i need this line???
+pacu.data$date <- as.Date(pacu.data$In.Recovery.At,format = "%d/%m/%Y  %I:%M:%S %p")
+pacu.data$Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m")
+pacu.data$Day_Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m-%d")
+pacu.data$Answer <- as.character(pacu.data$Answer)
+pacu.data$Patient.First.Name <- as.character(pacu.data$Patient.First.Name)
+pacu.data$Patient.Last.Name <- as.character(pacu.data$Patient.Last.Name)
+
+# Adverse events in ORMIS are:
+events.descriptors <- c("ANAES RESP INTERVENT", "ANAES RESP INTERVENTION", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICATION", "RETURN TO OR", "UNPLANNED ADMISSION ICU", "ANTIEMETICS", "ANAESTH R/V- PAIN", "PAIN R/V ANAES CONS")
+
+# Use PACU cases from MOT data for pacu total cases per month
+events.adverse <- data.frame(matrix(NA, nrow=length(unique(mot.data$Month_Yr)), ncol=length(events.descriptors)+2))
+# Data frame had date as 1st col, then total PACU cases per month as 1 column and event totals as other columns.
+names(events.adverse) <- c("date","total.pacu.cases",events.descriptors)
+# add dates from mot.data to dates column. 
+events.adverse$date <- sort(unique(pacu.data$Month_Yr), decreasing=FALSE)
+# add total cases per month through PACU to column
+events.adverse$total.pacu.cases <- monthlycases[,"PACU"]
+
+#First do frequency table by month
+# enter event counts to each column - ensure dates match up
+for (i in events.descriptors){
+  t <- as.data.frame(table(pacu.data$Month_Yr, pacu.data$Answer == i))
+  t <- subset(t, t["Var2"]==TRUE)
+  events.adverse[,i] <- t["Freq"]
+} # End for i loop
+# If no adverse events in a category the column will remain filled with NA - convert these to zero for calculations
+events.adverse[is.na(events.adverse)] <- 0
+
+# combine duplicate columns and drop excess
+# Respiatory Intervention
+events.adverse$"ANAES RESP INTERVENTION" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"ANAES RESP INTERVENTION"
+events.adverse$"ANAES RESP INTERVENT" <- NULL
+events.descriptors <- names(events.adverse[2:length(events.adverse)])
+
+# Pain reviews
+events.adverse$"ANAESTH R/V- PAIN" <- events.adverse$"PAIN R/V ANAES CONS" + events.adverse$"ANAESTH R/V- PAIN"
+events.adverse$"PAIN R/V ANAES CONS" <- NULL
+events.descriptors <- names(events.adverse[2:length(events.adverse)])
+names(events.adverse)[names(events.adverse)=="ANAESTH R/V- PAIN"] <- "Pain Revew" # Change name to Pain Review
+
+# PONV
+events.adverse$ANTIEMETICS <- events.adverse$ANTIEMETICS + events.adverse$`PERSISTENT PONV`
+events.adverse$`PERSISTENT PONV` <- NULL
+names(events.adverse)[names(events.adverse)=="ANTIEMETICS"] <- "PONV" # Change name to PONV
+events.descriptors <- names(events.adverse[2:length(events.adverse)])
+
+# Respiratory event = Anaes intervent + Cardio/ Resp Arrest + Reintub + Resp Complication
+events.adverse$"Resp V Serious" <- events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION"
+events.descriptors <- c(events.descriptors, "Resp Event", "Resp Serious", "Resp V Serious")
+events.adverse$"Resp Event" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION" + events.adverse$"RESP COMPLICATION"
+# Serious Resp event = Anaes intervent + Cario Resp Arrest + Reintub
+events.adverse$"Resp Serious" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION"
+# V Serous Resp Event = Arrest + Reintub
+
+# Change CARDIO / RESP ARREST as this label causes an error later when used for file nameing
+names(events.adverse)[names(events.adverse)=="CARDIO / RESP ARREST"] <- "CARDIO-RESP ARREST"
+events.descriptors <- names(events.adverse[2:length(events.adverse)])
+# Update pacu.data$Answer with new event name
+pacu.data$Answer[grep("CARDIO / RESP ARREST", pacu.data$Answer, ignore.case=TRUE)] <- as.character("CARDIO-RESP ARREST")
+# Change REINTUB/ VENTILATION as this label causes an error later when used for file nameing
+names(events.adverse)[names(events.adverse)=="REINTUB/ VENTILATION"] <- "REINTUBATION"
+events.descriptors <- names(events.adverse[2:length(events.adverse)])
+# Update pacu.data$Answer with new event name
+pacu.data$Answer[grep("REINTUB/ VENTILATION", pacu.data$Answer, ignore.case=TRUE)] <- as.character("REINTUBATION")
+
+# Unplanned ICU admission should be calculated from the mot data detecting dispatity between planned discharge ward and actual discharge ward
+
+# Remove unnecessary columns for charting etc or use new vector with only columns needed for charting
+# Update the event descriptors in the vector
+events.infrequent.descriptors <- c(events.descriptors[4], events.descriptors[11], events.descriptors[13],events.descriptors[14]) #Cardiac Arrest, Reintubation, Return to OR, Unplanned ICU
+events.to.skip <- c(events.descriptors[7], events.descriptors[9], events.descriptors[10], events.descriptors[19], events.infrequent.descriptors) # Other, Prolonged Unconc, Reaction, Resp V Serious
+
+```
+
+```{r Plot p charts, echo = FALSE, results='hide'}
+i="ANAES RESP INTERVENTION"
+ qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r echo = FALSE, results='hide'}
+i <- "HAEMODYNAMIC COMP"
+    qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r echo = FALSE, results='hide'}
+i <- "HYPOTHERMIA <36 DEG"
+    qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r echo = FALSE, results='hide'}
+i <- "PONV"
+    qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r echo = FALSE, results='hide'}
+i <- "Pain Revew" 
+    qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r echo = FALSE, results='hide'}
+i <- "Resp Event" 
+    qcc(events.adverse[i],
+      type="p",
+      sizes=events.adverse$total.pacu.cases,
+      nsigmas=3,
+      labels=events.adverse$date,
+      axes.las=2,
+      data.name = i, #c(i, min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)),
+      add.stats=FALSE,
+      xlab= "",
+      ylab = "Proportion",
+      title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+      ) # Close qcc
+```
+
+##
+
+```{r g-charts Cardiac Arrest, echo = FALSE, results='hide'}
+i <- events.infrequent.descriptors[1] 
+ t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
+ t <- subset(t, t["Var2"]==TRUE)
+ events.infrequent <- t["Freq"]
+ noevents <- diff(which(c(1,events.infrequent[,1])>=1))-1
+t <- subset(t, t$Freq>=1)
+
+qcc(noevents,
+    type="g",
+    #nsigmas=3,
+    conf=0.9,
+    labels=t[,"Var1"],
+    axes.las=2,
+    add.stats=FALSE,
+    xlab= "",
+    ylab = "Days between",
+    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+) # Close qcc
+
+```
+
+##
+
+```{r g-charts Return OR, echo = FALSE, results='hide'}
+i <- events.infrequent.descriptors[3] 
+ t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
+ t <- subset(t, t["Var2"]==TRUE)
+ events.infrequent <- t["Freq"]
+ noevents <- diff(which(c(1,events.infrequent[,1])>=1))-1
+t <- subset(t, t$Freq>=1)
+
+qcc(noevents,
+    type="g",
+    #nsigmas=3,
+    conf=0.9,
+    labels=t[,"Var1"],
+    axes.las=2,
+    add.stats=FALSE,
+    xlab= "",
+    ylab = "Days between",
+    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+) # Close qcc
+
+```
+
+##
+
+```{r g-charts Unplanned ICU admission, echo = FALSE, results='hide'}
+i <- events.infrequent.descriptors[4] 
+ t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
+ t <- subset(t, t["Var2"]==TRUE)
+ events.infrequent <- t["Freq"]
+ noevents <- diff(which(c(1,events.infrequent[,1])>=1))-1
+t <- subset(t, t$Freq>=1)
+
+qcc(noevents,
+    type="g",
+    #nsigmas=3,
+    conf=0.9,
+    labels=t[,"Var1"],
+    axes.las=2,
+    add.stats=FALSE,
+    xlab= "",
+    ylab = "Days between",
+    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
+) # Close qcc
+
+```
+
+#ACHS Indicators
+
+##
+
+```{r echo = FALSE}
+# CALCULATE ACHS INDICATORS and TABLE:
+# ACHS indicators are:
+# 1.1 Pre-anesthetic consultation by anaesthetist
+# 1.2 Smoking cessation advice in pre-anaesthetic consultation
+# 2.1 Presence of trained assistant
+# 2.2 Documentation complies with ANZCA PS6
+# 2.3 Stop-before you block procedure
+# 2.4 Prophlactic antiemetics administered to patients wit a history
+# 3.1 Relief of respiratory distress in recovery (re-intub/ LMA/ ventilation)
+# 3.2 PONV treatment in PACU
+# 3.3 Temp < 36C
+# 3.4 Pain not responding to protocol
+# 3.5 Unplanned stay > 2 hrs
+# 4.1 Unplanned admission to ICU
+# 4.2 Documented handover MOT-PACU
+# 4.3 Documented handover PACU-Ward
+# 5.1 Pain scores recorded for surgical patients
+# 5.2 Post-op epidurals reviewed by anaesthetist daily
+#
+ACHS.min.date <- "2017-01"
+ACHS.max.date <- "2017-06"
+ACHS.data <- mot.data[(mot.data$Month_Yr>= ACHS.min.date & mot.data$Month_Yr<= ACHS.max.date),]
+ACHS.events.adverse <-events.adverse[(events.adverse$date>= ACHS.min.date & events.adverse$date<= ACHS.max.date),]
+ACHS.monthlycases <- monthlycases[rownames(monthlycases) >= ACHS.min.date & rownames(monthlycases) <= ACHS.max.date,]
+
+ACHS.2.1 <- percent(length(ACHS.data[,"Tech.1.Name"])/length(ACHS.data[,"Anaes.1.Name"]))
+ACHS.3.1 <- percent(sum(ACHS.events.adverse$`Resp V Serious`) / sum(ACHS.monthlycases[,"PACU"]),format="d")
+ACHS.3.2 <- percent(sum(ACHS.events.adverse$PONV) / sum(ACHS.monthlycases[,"PACU"]),format="d")
+ACHS.3.3 <- percent(sum(ACHS.events.adverse$`HYPOTHERMIA <36 DEG`) / sum(ACHS.monthlycases[,"PACU"]),format="d")
+ACHS.3.4 <- percent(sum(ACHS.events.adverse$`Pain Revew`) / sum(ACHS.monthlycases[,"PACU"]),format="d")
+ACHS.3.5 <- percent(sum(ACHS.events.adverse$`PROLONGED STAY >2 HR`) / sum(ACHS.monthlycases[,"PACU"]),format="d")
+
+ACHS.table <- data.frame(
+  Indicator = c("2.1 Presence of trained assistant",
+                "3.1 Relief of respiratory distress in recovery",
+                "3.2 PONV treatment in PACU",
+                "3.3 Temp < 36C",
+                "3.4 Pain not responding to protocol",
+                "3.5 Unplanned stay > 2 hrs"
+    ),
+  Numerator = c(length(ACHS.data[,"Tech.1.Name"]), 
+                sum(ACHS.events.adverse$`Resp V Serious`),
+                sum(ACHS.events.adverse$PONV),
+                sum(ACHS.events.adverse$`HYPOTHERMIA <36 DEG`),
+                sum(ACHS.events.adverse$`Pain Revew`),
+                sum(ACHS.events.adverse$`PROLONGED STAY >2 HR`)),
+  Denominator = c(length(ACHS.data[,"Anaes.1.Name"]),
+                  sum(ACHS.monthlycases[,"PACU"]),
+                  sum(ACHS.monthlycases[,"PACU"]),
+                  sum(ACHS.monthlycases[,"PACU"]),
+                  sum(ACHS.monthlycases[,"PACU"]),
+                  sum(ACHS.monthlycases[,"PACU"])),
+  Value = c(ACHS.2.1, ACHS.3.1, ACHS.3.2, ACHS.3.3, ACHS.3.4, ACHS.3.5)
+) # Close ACHS.table <- df
+kable(ACHS.table, caption=paste("ACHS Indicators: ", ACHS.min.date, " - ", ACHS.max.date))
+
+```
+
+# The End!
