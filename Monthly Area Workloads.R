@@ -290,6 +290,20 @@ filename <- paste(filename.prefix, " ACHS Indicators.pdf")
 #pdf(filename, height = 7, width =12 )
 export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 # dev.off()
+
+# Here I am starting to work on FORREST PLOTS
+# Combine mot.data & pacu.data into one data set linked by MRN & date
+# combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
+# Clean up combined.data - remove cases with no anaesthetist
+# combined.data <- combined.data[!combined.data$Anaes.1.Name=="",]
+# remove registrars and other extraneous names
+# using PONV as an example...
+# determine the anaesthetists names with patients experiencing PONV
+# combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"]
+# na.omit(combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"])
+
+
+
 # CLEAN UP before ending.
 # Reset working directory to functions.directory so history etc saved there on exit.
 setwd(functions.directory)
