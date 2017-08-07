@@ -86,7 +86,7 @@ kable(table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mo
 
 ##
 
-```{r echo = FALSE}
+```{r echo = FALSE, results='asis'}
 # Write table of Activity by Specialty
 
 kable(table(mot.data$Month_Yr, mot.data$Specialty.Desc)[,order(colnames(table(mot.data$Month_Yr, mot.data$Specialty.Desc)))][,6:10],format="html", pad=0)
@@ -159,7 +159,7 @@ kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,o
 ```{r echo = FALSE}
 # Write table of Activity by Anaesthetist 5
 
-kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,17:19], format="html", pad=0)
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,17:20], format="html", pad=0)
 
 ```
 
@@ -168,7 +168,7 @@ kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,o
 ```{r echo = FALSE}
 # Write table of Activity by Anaesthetist 6
 
-kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,20:23], format="html", pad=0)
+kable(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[,order(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))][,21:23], format="html", pad=0)
 
 ```
 
