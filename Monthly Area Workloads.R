@@ -32,7 +32,6 @@ setwd(anaes.data.directory)
 # ** also consider using zip files to store the data - perhaps one for mot and one for pac for each time period - then wouldn't need folder per data set but zip file per data set
 mot.data <- CombineAll()
 
-#CLEAN DATA
 # Modify dates from excel to work in R
 # **could this be written as a fxn to be called with the format to convert and format to return**
 mot.data$date = as.character(mot.data$Operation.Date)
@@ -41,6 +40,15 @@ mot.data$Month_Yr <- format(as.Date(mot.data$date), "%Y-%m")
 # Correct .PACU.ICU.WARD variable (appears as pacu.icu.ward & icu.pacu.ward - combined into pacu.icu.ward)
 mot.data$PACU.ICU.WARD <- replace(mot.data$PACU.ICU.WARD, (mot.data$PACU.ICU.WARD == "HOME" | mot.data$PACU.ICU.WARD == "WARD"), "PACU")
 monthlycases <- table(mot.data$Month_Yr, mot.data$PACU.ICU.WARD)[,c("ICU","PACU")]
+
+# Clean up names in data
+# Correct some duplicate names and remove suffex - Anaes Consultant from some
+levels(mot.data$Anaes.1.Name) <- c(levels(mot.data$Anaes.1.Name), "SLYKERMAN,Julia", "HUANG,Dennis", "SINGH,Raman")
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "COLLARD,Caroline - Anaes Cons"] <- "COLLARD,Caroline"
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "SLYKERMAN,Julia - Anaes Consultant"] <- "SLYKERMAN,Julia"
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "HUANG,Dennis - Anaes Consultant"] <- "HUANG,Dennis"
+mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "SINGH,Raman - Anaes Consultant"] <- "SINGH,Raman"
+
 
 ## Plot and save stacked barplot of MOT monthly activity seperated into ICU and PACU 
 # **consider using a function called with filename properties to open the file and close after plot**
@@ -293,16 +301,20 @@ export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 
 # Here I am starting to work on FORREST PLOTS
 # Combine mot.data & pacu.data into one data set linked by MRN & date
-# combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
-# Clean up combined.data - remove cases with no anaesthetist
-# combined.data <- combined.data[!combined.data$Anaes.1.Name=="",]
-# remove registrars and other extraneous names
+combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
+# Clean up combined.data - remove cases with no anaesthetist, registrars and other extraneous names
+registrars <- c("", "ALVAREZ,Juan Sebastian Lopera","BACAJEWSK,Rafal","HUNG,David -  Registrar Anaesthetist","JONES,Alison","POLLARD,Amy","SMITH,Robert","COLLARD,Cameron - Anaes Regs", "LOPERA ALVAREZ,Juan Sebastian", "MEHMOOD,Junaid", "MCDERMOTT,Laura", "JONES,Tyson", "BELL,Cameron - Anaes Regs", "BURNELL,Sheena", "SHAW,Rebecca", "BEUTH,Jodie", "BURGESS,Tegan", "GUY,Louis", "LIM,Kian - Anaes Registrar", "PEARSON,Yana", "RANCE,Timothy","SOUNESS,Andrew", "WILLIAMS,Charles", "DAWAR,Ahmad", "CHAWLA,Gunjan", "HAENKE,Daniel","HUANG,Jason - Gastroenterologist", "RICKARDS,Leah", "TOGNOLINI,Angela", "WILLIAMS,Courtney", "EDWARDS,Lucas", "FERNANDEZ,Nevin", "HOLLAND,Tom", "KIPPIN,Louisa", "TURNER,Maryann", "JAMSHIDI,Behruz", "HUANG,Jason", "DASILVA,Dianna", "FARZADI,Maryam Zarhra", "FLINT,Nathan", "HERDY,Charles", "HOLGATE,Andrew")
+combined.data <- combined.data[!combined.data$Anaes.1.Name %in% registrars,]
+
 # using PONV as an example...
 # determine the anaesthetists names with patients experiencing PONV
-# combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"]
-# na.omit(combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"])
-
-
+ponv.cases <- na.omit(combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"])
+## combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"]
+# Calculate the case load per anaesthetist - taken from MOT data because row number increased by join to form combined.data
+anaes.cases <- NA
+for (i in 1 : length(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))){
+  anaes.cases[i] <- sum(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[i])
+}
 
 # CLEAN UP before ending.
 # Reset working directory to functions.directory so history etc saved there on exit.
