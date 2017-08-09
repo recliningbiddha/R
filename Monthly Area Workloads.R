@@ -7,12 +7,13 @@ rm(list=ls())
 # Load required libraries
 library("gridExtra")
 library("devtools")
-# library("dplyr")
 library("qcc")
 library("formattable")
 library("htmltools")
 library("webshot")
+library("plyr")
 library("knitr")
+
 
 # Set directories
 anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
@@ -225,18 +226,19 @@ filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," "
 filename <- paste(filename.prefix, i," g-chart.pdf")
 pdf(filename, height = 7, width =12 )
 t <- subset(t, t$Freq>=1)
-
+par(mfrow=c(1,1))
 qcc(noevents,
     type="g",
     #nsigmas=3,
-    conf=0.9,
+    conf=0.95,
     labels=t[,"Var1"],
     axes.las=2,
     add.stats=FALSE,
     xlab= "Date",
     ylab = "Days between",
-    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr))
-) # Close qcc
+    title = paste(i, "\n", min(mot.data$Month_Yr), " to ", max(mot.data$Month_Yr)),
+    restore.par = FALSE #to allow adding lines etc to chart with par command
+)# Close qcc
 dev.off()
 } # Close For i
 
@@ -304,7 +306,10 @@ export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
 # Clean up combined.data - remove cases with no anaesthetist, registrars and other extraneous names
 registrars <- c("", "ALVAREZ,Juan Sebastian Lopera","BACAJEWSK,Rafal","HUNG,David -  Registrar Anaesthetist","JONES,Alison","POLLARD,Amy","SMITH,Robert","COLLARD,Cameron - Anaes Regs", "LOPERA ALVAREZ,Juan Sebastian", "MEHMOOD,Junaid", "MCDERMOTT,Laura", "JONES,Tyson", "BELL,Cameron - Anaes Regs", "BURNELL,Sheena", "SHAW,Rebecca", "BEUTH,Jodie", "BURGESS,Tegan", "GUY,Louis", "LIM,Kian - Anaes Registrar", "PEARSON,Yana", "RANCE,Timothy","SOUNESS,Andrew", "WILLIAMS,Charles", "DAWAR,Ahmad", "CHAWLA,Gunjan", "HAENKE,Daniel","HUANG,Jason - Gastroenterologist", "RICKARDS,Leah", "TOGNOLINI,Angela", "WILLIAMS,Courtney", "EDWARDS,Lucas", "FERNANDEZ,Nevin", "HOLLAND,Tom", "KIPPIN,Louisa", "TURNER,Maryann", "JAMSHIDI,Behruz", "HUANG,Jason", "DASILVA,Dianna", "FARZADI,Maryam Zarhra", "FLINT,Nathan", "HERDY,Charles", "HOLGATE,Andrew")
-combined.data <- combined.data[!combined.data$Anaes.1.Name %in% registrars,]
+combined.data <- combined.data[!combined.data$Anaes.1.Name %in% c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn"),]
+
+# remove cases destined to ICU - analyse PACU only
+combined.data <- combined.data[combined.data$PACU.ICU.WARD == "PACU",]
 
 # using PONV as an example...
 # determine the anaesthetists names with patients experiencing PONV
@@ -312,9 +317,50 @@ ponv.cases <- na.omit(combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes
 ## combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"]
 # Calculate the case load per anaesthetist - taken from MOT data because row number increased by join to form combined.data
 anaes.cases <- NA
-for (i in 1 : length(colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))))){
-  anaes.cases[i] <- sum(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, registrars))[i])
+anaes.names <- colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn"))))
+for (i in 1 : length(anaes.names)){
+  anaes.cases[i] <- sum(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn")))[,i])
 }
+p <- NA 
+for (i in 1:length(anaes.names)){
+  p[i] <- sum(ponv.cases$Anaes.1.Name == anaes.names[i]) / anaes.cases[i]
+}
+
+## code to plot funnel plot from https://stats.stackexchange.com/questions/5195/how-to-draw-funnel-plot-using-ggplot2-in-r/5210#5210
+library(ggplot2)
+
+#set.seed(1)
+#p <- runif(100)
+#number <- sample(1:1000, 100, replace = TRUE)
+number <- anaes.cases
+p.se <- sqrt((p*(1-p)) / (number))
+df <- data.frame(p, number, p.se)
+
+## common effect (fixed effect model)
+## p.fem <- weighted.mean(p, 1/p.se^2)
+## arithmetic mean - I don't understand the use if FEM and weighted mean - perhaps I should look this up? I have repaced with arithmetic mean.
+p.fem <- sum(p*number)/sum(number)
+
+## lower and upper limits for 95% and 99.9% CI, based on FEM estimator
+number.seq <- seq(0.001, max(number), 0.1)
+number.ll95 <- p.fem - 1.96 * sqrt((p.fem*(1-p.fem)) / (number.seq)) 
+number.ul95 <- p.fem + 1.96 * sqrt((p.fem*(1-p.fem)) / (number.seq)) 
+number.ll999 <- p.fem - 3.29 * sqrt((p.fem*(1-p.fem)) / (number.seq)) 
+number.ul999 <- p.fem + 3.29 * sqrt((p.fem*(1-p.fem)) / (number.seq)) 
+dfCI <- data.frame(number.ll95, number.ul95, number.ll999, number.ul999, number.seq, p.fem)
+
+## draw plot
+fp <- ggplot(aes(x = number, y = p), data = df) +
+  geom_point(shape = 1) +
+  geom_line(aes(x = number.seq, y = number.ll95), data = dfCI) +
+  geom_line(aes(x = number.seq, y = number.ul95), data = dfCI) +
+  geom_line(aes(x = number.seq, y = number.ll999), linetype = "dashed", data = dfCI) +
+  geom_line(aes(x = number.seq, y = number.ul999), linetype = "dashed", data = dfCI) +
+  geom_hline(aes(yintercept = p.fem), data = dfCI) +
+  scale_y_continuous(limits = c(0,0.15)) +
+  ggtitle(paste("Funnel Plot of PONV: ",min(mot.data$Month_Yr)," - ", max(mot.data$Month_Yr))) +
+  xlab("Number of cases") + ylab("Proportion PONV") + theme_bw() 
+fp
 
 # CLEAN UP before ending.
 # Reset working directory to functions.directory so history etc saved there on exit.
