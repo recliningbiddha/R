@@ -1,5 +1,6 @@
 # WRITTEN BY CHRISTOPHER STONELL 2017
 # GENERATES ACHS INDICATORS AND CONTROL CHARTS FOR PACU INDICATORS
+# PLEASE ACKNOWEDGE THE SOURCE IF YOU CHOOSE TO USE THIS CODE.
 
 # clear workspace
 rm(list=ls())
@@ -13,6 +14,7 @@ library("htmltools")
 library("webshot")
 library("plyr")
 library("knitr")
+library(ggplot2)
 
 
 # Set directories
@@ -110,6 +112,10 @@ events.adverse$date <- sort(unique(pacu.data$Month_Yr), decreasing=FALSE)
 # add total cases per month through PACU to column
 events.adverse$total.pacu.cases <- monthlycases[,"PACU"]
 
+
+## !!! I might be able to tidy this section up iwth the aggreagte function rather than
+## generating tables and selecting columns!!!
+
 #First do frequency table by month
 # enter event counts to each column - ensure dates match up
 for (i in events.descriptors){
@@ -122,6 +128,7 @@ for (i in events.descriptors){
 # If no adverse events in a category the column will remain filled with NA - convert these to zero for calculations
 events.adverse[is.na(events.adverse)] <- 0
 
+## this cleaning of the data needs to occur immediately after read from CSV file with CombineAll()
 # combine duplicate columns and drop excess
 # Respiatory Intervention
 events.adverse$"ANAES RESP INTERVENTION" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"ANAES RESP INTERVENTION"
@@ -301,7 +308,7 @@ filename <- paste(filename.prefix, " ACHS Indicators.pdf")
 export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 # dev.off()
 
-# Here I am starting to work on FORREST PLOTS
+# FORREST PLOTS
 # Combine mot.data & pacu.data into one data set linked by MRN & date
 combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
 # Clean up combined.data - remove cases with no anaesthetist, registrars and other extraneous names
@@ -311,35 +318,35 @@ combined.data <- combined.data[!combined.data$Anaes.1.Name %in% c(registrars, "M
 # remove cases destined to ICU - analyse PACU only
 combined.data <- combined.data[combined.data$PACU.ICU.WARD == "PACU",]
 
-# using PONV as an example...
-# determine the anaesthetists names with patients experiencing PONV
-ponv.cases <- na.omit(combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"])
-## combined.data[combined.data$Answer=="ANTIEMETICS",]["Anaes.1.Name"]
+events.to.chart <- c(names(events.adverse)[7],names(events.adverse)[16], names(events.adverse)[17])
+
+# manually select adverse events from the list below for now - change to loop once established.
+# determine the anaesthetists names with patients experiencing events
+cases <- na.omit(combined.data[combined.data$Answer %in% c("ANTIEMETICS","PONV"),]["Anaes.1.Name"])
+# cases <- na.omit(combined.data[combined.data$Answer %in% c("PAIN R/V ANAES CONS", "ANAESTH R/V- PAIN"),]["Anaes.1.Name"])
+# cases <- na.omit(combined.data[combined.data$Answer == "HYPOTHERMIA <36 DEG",]["Anaes.1.Name"])
+
 # Calculate the case load per anaesthetist - taken from MOT data because row number increased by join to form combined.data
 anaes.cases <- NA
+p <- NA 
 anaes.names <- colnames(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn"))))
 for (i in 1 : length(anaes.names)){
   anaes.cases[i] <- sum(table(mot.data$Month_Yr, droplevels(mot.data$Anaes.1.Name, c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn")))[,i])
-}
-p <- NA 
-for (i in 1:length(anaes.names)){
-  p[i] <- sum(ponv.cases$Anaes.1.Name == anaes.names[i]) / anaes.cases[i]
-}
+  p[i] <- sum(cases$Anaes.1.Name == anaes.names[i]) / anaes.cases[i]
+  }
 
 ## code to plot funnel plot from https://stats.stackexchange.com/questions/5195/how-to-draw-funnel-plot-using-ggplot2-in-r/5210#5210
 library(ggplot2)
 
-#set.seed(1)
-#p <- runif(100)
-#number <- sample(1:1000, 100, replace = TRUE)
 number <- anaes.cases
 p.se <- sqrt((p*(1-p)) / (number))
 df <- data.frame(p, number, p.se)
 
 ## common effect (fixed effect model)
 ## p.fem <- weighted.mean(p, 1/p.se^2)
-## arithmetic mean - I don't understand the use if FEM and weighted mean - perhaps I should look this up? I have repaced with arithmetic mean.
-p.fem <- sum(p*number)/sum(number)
+## arithmetic mean - I don't understand the use if FEM and weighted mean - perhaps I should look this up? I have repaced with arithmetic mean
+## p.fem <- sum(p*number)/sum(number)
+p.fem <- mean(p)
 
 ## lower and upper limits for 95% and 99.9% CI, based on FEM estimator
 number.seq <- seq(0.001, max(number), 0.1)
@@ -349,19 +356,28 @@ number.ll999 <- p.fem - 3.29 * sqrt((p.fem*(1-p.fem)) / (number.seq))
 number.ul999 <- p.fem + 3.29 * sqrt((p.fem*(1-p.fem)) / (number.seq)) 
 dfCI <- data.frame(number.ll95, number.ul95, number.ll999, number.ul999, number.seq, p.fem)
 
+
+for (i in 1:length(anaes.names)){
 ## draw plot
 fp <- ggplot(aes(x = number, y = p), data = df) +
   geom_point(shape = 1) +
+  geom_point(aes(x = number[i], y = p[i]), shape = 16) + 
   geom_line(aes(x = number.seq, y = number.ll95), data = dfCI) +
   geom_line(aes(x = number.seq, y = number.ul95), data = dfCI) +
   geom_line(aes(x = number.seq, y = number.ll999), linetype = "dashed", data = dfCI) +
   geom_line(aes(x = number.seq, y = number.ul999), linetype = "dashed", data = dfCI) +
   geom_hline(aes(yintercept = p.fem), data = dfCI) +
   scale_y_continuous(limits = c(0,0.15)) +
-  ggtitle(paste("Funnel Plot of PONV: ",min(mot.data$Month_Yr)," - ", max(mot.data$Month_Yr))) +
-  xlab("Number of cases") + ylab("Proportion PONV") + theme_bw() 
-fp
+  ggtitle(paste("Funnel Plot of: ", anaes.names[i]," ",min(mot.data$Month_Yr)," - ", max(mot.data$Month_Yr))) +
+  xlab("Number of cases") + ylab(paste("Proportion")) + theme_bw() 
+
+setwd(output.directory)
+filename <- paste(filename.prefix, anaes.names[i], "Funnel Plot.pdf")
+ggsave(filename, plot = fp, device="pdf", path= output.directory, width = 12, height = 7)
+} # For i
 
 # CLEAN UP before ending.
 # Reset working directory to functions.directory so history etc saved there on exit.
 setwd(functions.directory)
+# Clear Workspace
+# rm(list=ls())
