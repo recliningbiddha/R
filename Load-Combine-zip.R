@@ -1,5 +1,9 @@
 ## Load files from .zip and Combines into "data"
 
+## Improve this funcion by:
+## 1) returning a data.frame
+## 2) pass number of months of data to read to function
+
 CombineAllZip<-function()
   {
 
