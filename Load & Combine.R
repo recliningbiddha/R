@@ -1,4 +1,7 @@
 ## Load and Combine Files
+## To improve this function
+## 1) convert to DataFrame,
+## 2) pass number of months to read to function
 
 CombineAll<-function()
   {
