@@ -2,6 +2,8 @@
 ## Number of column and names may vary in each file.
 ## Routine matches colnames and if needed adds columns
 
+## Improve function by returning data.frame
+
 Combine12Zip<-function()
   {
 
