@@ -308,7 +308,7 @@ filename <- paste(filename.prefix, " ACHS Indicators.pdf")
 export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 # dev.off()
 
-# FORREST PLOTS
+# FUNNEL PLOTS
 # Combine mot.data & pacu.data into one data set linked by MRN & date
 combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
 # Clean up combined.data - remove cases with no anaesthetist, registrars and other extraneous names
