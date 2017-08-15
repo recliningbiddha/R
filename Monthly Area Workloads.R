@@ -113,7 +113,7 @@ events.adverse$date <- sort(unique(pacu.data$Month_Yr), decreasing=FALSE)
 events.adverse$total.pacu.cases <- monthlycases[,"PACU"]
 
 
-## !!! I might be able to tidy this section up iwth the aggreagte function rather than
+## !!! I might be able to tidy this section up with the aggreagte function or tapply rather than
 ## generating tables and selecting columns!!!
 
 #First do frequency table by month
