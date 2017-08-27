@@ -1,7 +1,4 @@
 ## Load and Combine Files
-## To improve this function
-## 1) convert to DataFrame,
-## 2) pass number of months to read to function
 
 CombineAll<-function()
   {
@@ -13,8 +10,8 @@ CombineAll<-function()
   ##Combine 1st two files in directory into data
   ## Number of column and names may vary in each file.
   ## Routine matches colnames and if needed adds columns
-  x<-read.csv(filenames[1])
-  y<-read.csv(filenames[2])
+  x<-as.data.frame(read.csv(filenames[1]))
+  y<-as.data.frame(read.csv(filenames[2]))
   x.diff<-setdiff(colnames(x),colnames(y))
   y.diff<-setdiff(colnames(y),colnames(x))
   x[,c(as.character(y.diff))]<-NA
@@ -25,7 +22,7 @@ CombineAll<-function()
   for (filename in filenames[3:length(filenames)]) { ##loop for filename from 3rd to end
     ## compared to above:
     ## x is new data from file, y is from var "data"
-    x<- read.csv(filename)
+    x<- as.data.frame(read.csv(filename))
     
     ## Number of column and names may vary in each file.
     ## Routine matches colnames and if needed adds columns
