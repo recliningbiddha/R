@@ -33,7 +33,10 @@ source_url("https://raw.githubusercontent.com/vxoli/R/master/export_formattable.
 setwd(anaes.data.directory)
 # **consider amend function so pass path and fxn reads files then returns to default path**
 # ** also consider using zip files to store the data - perhaps one for mot and one for pac for each time period - then wouldn't need folder per data set but zip file per data set
-mot.data <- CombineAll()
+mot.data <- data.frame(CombineAll())
+
+# Drop Patient Name fields from data.frame
+mot.data <- mot.data[, -which(names(mot.data) %in% c("Patient.First.Name", "Patient.Last.Name"))]
 
 # Modify dates from excel to work in R
 # **could this be written as a fxn to be called with the format to convert and format to return**
@@ -90,15 +93,16 @@ dev.off()
 
 # Start analysis of PACU data
 setwd(pacu.data.directory)
-pacu.data <- CombineAll()
+pacu.data <- data.frame(CombineAll())
+# Drop patient names from pacu.data
+pacu.data <- pacu.data[, -which(names(pacu.data) %in% c("Patient.First.Name", "Patient.Last.Name"))]
+
 # Normalise dates & accomodate the timestamp field
 # pacu.data$date <- as.character(pacu.data$In.Recovery.At) - do i need this line???
 pacu.data$date <- as.Date(pacu.data$In.Recovery.At,format = "%d/%m/%Y  %I:%M:%S %p")
 pacu.data$Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m")
 pacu.data$Day_Month_Yr <- format(as.Date(pacu.data$date), "%Y-%m-%d")
 pacu.data$Answer <- as.character(pacu.data$Answer)
-pacu.data$Patient.First.Name <- as.character(pacu.data$Patient.First.Name)
-pacu.data$Patient.Last.Name <- as.character(pacu.data$Patient.Last.Name)
 
 # Adverse events in ORMIS are:
 events.descriptors <- c("ANAES RESP INTERVENT", "ANAES RESP INTERVENTION", "BLOOD FLUID LOSS", "CARDIO / RESP ARREST", "HAEMODYNAMIC COMP", "HYPOTHERMIA <36 DEG", "OTHER", "PERSISTENT PONV", "PROLONGED STAY >2 HR", "PROLONGED UNCONSC", "REACTION", "REINTUB/ VENTILATION", "RESP COMPLICATION", "RETURN TO OR", "UNPLANNED ADMISSION ICU", "ANTIEMETICS", "ANAESTH R/V- PAIN", "PAIN R/V ANAES CONS")
