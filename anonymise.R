@@ -1,3 +1,4 @@
+
 ## Function to anonymise data in a data.frame
 # ==========================================
 # In code body use cols_to_anon as a vector with the column names to anonymise
@@ -14,8 +15,9 @@
 #https://www.r-bloggers.com/anonymising-data/
 # ==========================================
 
-function(data, cols_to_anon, algo = "crc32")
+anonymise <- function(data, cols_to_anon, algo = "crc32")
 {
+
   if(!require(digest)) stop("digest package is required")
   to_anon <- subset(data, select = cols_to_anon)
   unname(apply(to_anon, 1, digest, algo = algo))
