@@ -15,7 +15,7 @@ library("webshot")
 library("plyr")
 library("knitr")
 library(ggplot2)
-
+library(digest) # for anonymise.R function to hash MRN
 
 # Set directories
 anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
@@ -26,6 +26,8 @@ output.directory     <- "~/MEGAsync/QA\ Data/Data/Output"
 # Load required functions and routines
 source_url("https://raw.githubusercontent.com/vxoli/R/master/Load%20%26%20Combine.R")
 source_url("https://raw.githubusercontent.com/vxoli/R/master/export_formattable.R")
+source_url("https://raw.githubusercontent.com/vxoli/R/master/anonymise.R")
+# source("~/MEGAsync/QA Data/R Functions/anonymise.R")
 #setwd(functions.directory)
 #source("Load\ &\ Combine.R")
 
@@ -37,6 +39,9 @@ mot.data <- data.frame(CombineAll())
 
 # Drop Patient Name fields from data.frame
 mot.data <- mot.data[, -which(names(mot.data) %in% c("Patient.First.Name", "Patient.Last.Name"))]
+# Anonymise MRN with hash function
+cols_to_anon <- c("MRN")
+mot.data[,cols_to_anon] <- anonymise(mot.data,cols_to_anon)
 
 # Modify dates from excel to work in R
 # **could this be written as a fxn to be called with the format to convert and format to return**
@@ -96,6 +101,9 @@ setwd(pacu.data.directory)
 pacu.data <- data.frame(CombineAll())
 # Drop patient names from pacu.data
 pacu.data <- pacu.data[, -which(names(pacu.data) %in% c("Patient.First.Name", "Patient.Last.Name"))]
+# Anonymise MRN with hash function
+cols_to_anon <- c("MRN")
+pacu.data[,cols_to_anon] <- anonymise(pacu.data,cols_to_anon)
 
 # Normalise dates & accomodate the timestamp field
 # pacu.data$date <- as.character(pacu.data$In.Recovery.At) - do i need this line???
