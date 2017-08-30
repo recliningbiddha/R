@@ -13,7 +13,8 @@
 # https://www.r-bloggers.com/data-anonymization-in-r/
 # ==========================================
 
-anonymize <- function(x, algo="crc32") {
+anonymize <- function(x, algo="crc32") 
+{
   unq_hases <- vapply(unique(x), function(object) digest(object, algo=algo), FUN.VALUE="", USE.NAMES=TRUE)
   unname(unq_hases[x])
 }
