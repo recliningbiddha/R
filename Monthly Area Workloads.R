@@ -48,7 +48,13 @@ mot.data[,cols_to_anon] <- anonymise(mot.data,cols_to_anon)
 mot.data$date = as.character(mot.data$Operation.Date)
 mot.data$date = as.Date(mot.data$Operation.Date,format = "%d-%b-%Y")
 mot.data$Month_Yr <- format(as.Date(mot.data$date), "%Y-%m")
-# Correct .PACU.ICU.WARD variable (appears as pacu.icu.ward & icu.pacu.ward - combined into pacu.icu.ward)
+
+# Correct $PACU.ICU.WARD variable (appears as pacu.icu.ward, icu.pacu.ward & pacu.ward.icu) - combined into pacu.icu.ward
+mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- mot.data$ICU.PACU.WARD[is.na(mot.data$PACU.ICU.WARD)]
+mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- as.character(mot.data$PACU.WARD.ICU[is.na(mot.data$PACU.ICU.WARD)])
+mot.data <- mot.data[, -which(names(mot.data) %in% c("ICU.PACU.WARD", "PACU.WARD.ICU"))]
+
+# Destinations HOME, WARD & Other QH FACILITY converted to PACU)
 mot.data$PACU.ICU.WARD <- replace(mot.data$PACU.ICU.WARD, (mot.data$PACU.ICU.WARD == "HOME" | mot.data$PACU.ICU.WARD == "WARD"), "PACU")
 monthlycases <- table(mot.data$Month_Yr, mot.data$PACU.ICU.WARD)[,c("ICU","PACU")]
 
@@ -287,6 +293,7 @@ dev.off()
 #
 
 ACHS.2.1 <- percent(length(mot.data[,"Tech.1.Name"])/length(mot.data[,"Anaes.1.Name"]))
+ACHS.2.3 <- percent(91/100)
 ACHS.3.1 <- percent(sum(events.adverse$`Resp V Serious`) / sum(monthlycases[,"PACU"]),format="d")
 ACHS.3.2 <- percent(sum(events.adverse$PONV) / sum(monthlycases[,"PACU"]),format="d")
 ACHS.3.3 <- percent(sum(events.adverse$`HYPOTHERMIA <36 DEG`) / sum(monthlycases[,"PACU"]),format="d")
@@ -295,25 +302,28 @@ ACHS.3.5 <- percent(sum(events.adverse$`PROLONGED STAY >2 HR`) / sum(monthlycase
 
 ACHS.table <- data.frame(
   Indicator = c("2.1 Presence of trained assistant",
+                "2.3 Stop before your Block",
                 "3.1 Relief of respiratory distress in recovery",
                 "3.2 PONV treatment in PACU",
                 "3.3 Temp < 36C",
                 "3.4 Pain not responding to protocol",
                 "3.5 Unplanned stay > 2 hrs"
     ),
-  Numerator = c(length(mot.data[,"Tech.1.Name"]), 
+  Numerator = c(length(mot.data[,"Tech.1.Name"]),
+                91,
                 sum(events.adverse$`Resp V Serious`),
                 sum(events.adverse$PONV),
                 sum(events.adverse$`HYPOTHERMIA <36 DEG`),
                 sum(events.adverse$`Pain Revew`),
                 sum(events.adverse$`PROLONGED STAY >2 HR`)),
   Denominator = c(length(mot.data[,"Anaes.1.Name"]),
+                  100,
                   sum(monthlycases[,"PACU"]),
                   sum(monthlycases[,"PACU"]),
                   sum(monthlycases[,"PACU"]),
                   sum(monthlycases[,"PACU"]),
                   sum(monthlycases[,"PACU"])),
-  Value = c(ACHS.2.1, ACHS.3.1, ACHS.3.2, ACHS.3.3, ACHS.3.4, ACHS.3.5)
+  Value = c(ACHS.2.1, ACHS.2.3, ACHS.3.1, ACHS.3.2, ACHS.3.3, ACHS.3.4, ACHS.3.5)
 ) # Close ACHS.table <- df
 # Write table to pdf
 setwd(output.directory)
@@ -339,7 +349,7 @@ events.to.chart <- c(names(events.adverse)[7],names(events.adverse)[16], names(e
 cases <- na.omit(combined.data[combined.data$Answer %in% c("ANTIEMETICS","PONV"),]["Anaes.1.Name"])
 # cases <- na.omit(combined.data[combined.data$Answer %in% c("PAIN R/V ANAES CONS", "ANAESTH R/V- PAIN"),]["Anaes.1.Name"])
 # cases <- na.omit(combined.data[combined.data$Answer == "HYPOTHERMIA <36 DEG",]["Anaes.1.Name"])
-
+stop("Done the work!")
 # Calculate the case load per anaesthetist - taken from MOT data because row number increased by join to form combined.data
 anaes.cases <- NA
 p <- NA 

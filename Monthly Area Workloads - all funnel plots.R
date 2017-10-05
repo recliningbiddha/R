@@ -48,6 +48,13 @@ mot.data[,cols_to_anon] <- anonymise(mot.data,cols_to_anon)
 mot.data$date = as.character(mot.data$Operation.Date)
 mot.data$date = as.Date(mot.data$Operation.Date,format = "%d-%b-%Y")
 mot.data$Month_Yr <- format(as.Date(mot.data$date), "%Y-%m")
+
+# Correct $PACU.ICU.WARD variable (appears as pacu.icu.ward, icu.pacu.ward & pacu.ward.icu) - combined into pacu.icu.ward
+mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- mot.data$ICU.PACU.WARD[is.na(mot.data$PACU.ICU.WARD)]
+mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- as.character(mot.data$PACU.WARD.ICU[is.na(mot.data$PACU.ICU.WARD)])
+mot.data <- mot.data[, -which(names(mot.data) %in% c("ICU.PACU.WARD", "PACU.WARD.ICU"))]
+
+
 # Correct .PACU.ICU.WARD variable (appears as pacu.icu.ward & icu.pacu.ward - combined into pacu.icu.ward)
 mot.data$PACU.ICU.WARD <- replace(mot.data$PACU.ICU.WARD, (mot.data$PACU.ICU.WARD == "HOME" | mot.data$PACU.ICU.WARD == "WARD"), "PACU")
 monthlycases <- table(mot.data$Month_Yr, mot.data$PACU.ICU.WARD)[,c("ICU","PACU")]
