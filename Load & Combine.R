@@ -1,9 +1,9 @@
-## Load and Combine Files
+## Load and Combine Files in .csv format
 
 CombineAll<-function()
   {
 
-##Need to get directory and CSV file names in directory  
+##Need to get directory and xlsx file names in directory  
 ## For now assume wd is set before function invoked.
   filenames <- dir(pattern=".csv$")
 
