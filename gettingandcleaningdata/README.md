@@ -21,7 +21,7 @@ Repo Structure
 This repo consists of:
 
 - run_analysis.R : main R script to generate the tidy data.
-- CodeBook.md : Documentation for the detail of the data.
+- codebook.md : Documentation for the detail of the data.
 - README.md : This readme file explaining the overview of this repo.
 
 Internal structure of the Script
