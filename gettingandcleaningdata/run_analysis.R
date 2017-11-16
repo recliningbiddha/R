@@ -3,6 +3,10 @@
 
 run_analysis <- function() {  #start function body
 
+#set directories
+  workingdir <- "~/Downloads/"
+  setwd(workingdir)  
+  
 # if the UCI HAR Dataset folder does not exist in the working directory,
 # pull the zip file from the Coursera-provided link and unzip it, cleaning up after
 folder <- "UCI HAR Dataset"
@@ -15,11 +19,11 @@ if(!file.exists(folder)) {
 
 # load required libraries
 library(dplyr)
+library(reshape2)
 
+#
 # 1. Merges the training and the test sets to create one data set.
-  
-#set directories
-  workingdir <- "~/Downloads/"
+#  
 
 # change to dirctory created
   setwd(paste(workingdir, "/UCI HAR Dataset", sep=""))
@@ -49,12 +53,32 @@ test <- cbind (testset, testlabels, testsubjects)
 train <- cbind(trainset, trainlabels, trainsubjects)
 dataset <- rbind(test, train)
 
+#
 # 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+#
 # Identify the column names containing mean or std
-keepcols <- grep("(mean\\(\\)|std\\(\\)|Activity|Subject)", names(data))
+keepcols <- grep("(mean\\(\\)|std\\(\\)|activity|subject)", names(dataset))
 dataset <- dataset[,keepcols]
 
+#
 # 3. Uses descriptive activity names to name the activities in the data set
+#
+activitylabels <- read.table("activity_labels.txt", col.names = c("activity", "activityname"))
+dataset <- merge(dataset, activitylabels)
+dataset <- dataset[,(names(dataset) != "activity")]
+colnames(dataset)[colnames(dataset) == "activityname"] <- "activity"
+
+#
+# 4. Appropriately labels the data set with descriptive variable names. 
+#
+# already done while reading in dataset
+
+#
+# 5. From the data set in step 4, creates a second, independent tidy data set with the average of each variable for each activity and each subject.
+# 
+dataset <- melt(dataset, id=c("subject","activity"))
+dataset <- dcast(dataset, subject+activity~variable, mean)
+write.table(dataset, file = "tidy_data.txt", row.names = FALSE)
 
 }  # end function body
 
