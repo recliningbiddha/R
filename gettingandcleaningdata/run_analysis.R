@@ -16,7 +16,7 @@ if(!file.exists(folder)) {
 # load required libraries
 library(dplyr)
 
-# 1. Read the data sets, then merge test and training data sets into one new set
+# 1. Merges the training and the test sets to create one data set.
   
 #set directories
   workingdir <- "~/Downloads/"
@@ -49,6 +49,12 @@ test <- cbind (testset, testlabels, testsubjects)
 train <- cbind(trainset, trainlabels, trainsubjects)
 dataset <- rbind(test, train)
 
-  
+# 2. Extracts only the measurements on the mean and standard deviation for each measurement. 
+# Identify the column names containing mean or std
+keepcols <- grep("(mean\\(\\)|std\\(\\)|Activity|Subject)", names(data))
+dataset <- dataset[,keepcols]
+
+# 3. Uses descriptive activity names to name the activities in the data set
+
 }  # end function body
 
