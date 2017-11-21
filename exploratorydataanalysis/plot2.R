@@ -23,18 +23,14 @@ household_data$Sub_metering_1 <- as.numeric(household_data$Sub_metering_1)
 household_data$Sub_metering_2 <- as.numeric(household_data$Sub_metering_2)
 household_data$Sub_metering_3 <- as.numeric(household_data$Sub_metering_3)
 
-household_data$GAPkw <- household_data$Global_active_power / 1000
-
-#plot 1
-hist(household_data$GAPkw, 
-     col="red", 
-     breaks = 18, 
-     xlim=c(0,6), 
-     ylim=c(0,1200), 
-     main = "Global Active Power", 
-     xlab = "Global Active Power (kilowatts)")
 
 #plot 2
-plot(household_data$GAPkw ~ household_data$datetime, 
-       type="l")
+plot(household_data$Global_active_power ~ household_data$datetime, 
+     type="l",
+     ylab="Global Active Power (kilowatts)",
+     xlab="")
+
+# write plot to file
+dev.copy(png, file="plot2.png", height=480, width=480)
+dev.off()
 
