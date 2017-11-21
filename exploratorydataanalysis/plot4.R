@@ -25,6 +25,8 @@ household_data$Sub_metering_3 <- as.numeric(household_data$Sub_metering_3)
 
 
 #plot 4
+par(mfrow=c(2,2), mar=c(4,4,2,1), oma=c(0,0,2,0))
+
 with(household_data, {
   plot(household_data$Global_active_power ~ household_data$datetime, 
        type="l",
