@@ -10,8 +10,8 @@ CombineAll<-function()
   ##Combine 1st two files in directory into data
   ## Number of column and names may vary in each file.
   ## Routine matches colnames and if needed adds columns
-  x<-as.data.frame(read.csv(filenames[1]))
-  y<-as.data.frame(read.csv(filenames[2]))
+  x<-as.data.frame(read.csv(filenames[1]), header=TRUE)
+  y<-as.data.frame(read.csv(filenames[2]), header=TRUE)
   x.diff<-setdiff(colnames(x),colnames(y))
   y.diff<-setdiff(colnames(y),colnames(x))
   x[,c(as.character(y.diff))]<-NA
@@ -22,7 +22,7 @@ CombineAll<-function()
   for (filename in filenames[3:length(filenames)]) { ##loop for filename from 3rd to end
     ## compared to above:
     ## x is new data from file, y is from var "data"
-    x<- as.data.frame(read.csv(filename))
+    x<- as.data.frame(read.csv(filename), header=TRUE)
     
     ## Number of column and names may vary in each file.
     ## Routine matches colnames and if needed adds columns

@@ -50,7 +50,7 @@ mot.data$date = as.Date(mot.data$Operation.Date,format = "%d-%b-%Y")
 mot.data$Month_Yr <- format(as.Date(mot.data$date), "%Y-%m")
 
 # Correct $PACU.ICU.WARD variable (appears as pacu.icu.ward, icu.pacu.ward & pacu.ward.icu) - combined into pacu.icu.ward
-mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- mot.data$ICU.PACU.WARD[is.na(mot.data$PACU.ICU.WARD)]
+mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- as.character(mot.data$ICU.PACU.WARD[is.na(mot.data$PACU.ICU.WARD)])
 mot.data$PACU.ICU.WARD[is.na(mot.data$PACU.ICU.WARD)] <- as.character(mot.data$PACU.WARD.ICU[is.na(mot.data$PACU.ICU.WARD)])
 mot.data <- mot.data[, -which(names(mot.data) %in% c("ICU.PACU.WARD", "PACU.WARD.ICU"))]
 
@@ -61,7 +61,7 @@ monthlycases <- table(mot.data$Month_Yr, mot.data$PACU.ICU.WARD)[,c("ICU","PACU"
 
 # Clean up names in data
 # Correct some duplicate names and remove suffex - Anaes Consultant from some
-levels(mot.data$Anaes.1.Name) <- c(levels(mot.data$Anaes.1.Name), "SLYKERMAN,Julia", "HUANG,Dennis", "SINGH,Raman")
+levels(mot.data$Anaes.1.Name) <- c(levels(mot.data$Anaes.1.Name), "COLLARD,Caroline", "SLYKERMAN,Julia", "HUANG,Dennis", "SINGH,Raman")
 mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "COLLARD,Caroline - Anaes Cons"] <- "COLLARD,Caroline"
 mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "SLYKERMAN,Julia - Anaes Consultant"] <- "SLYKERMAN,Julia"
 mot.data$Anaes.1.Name[mot.data$Anaes.1.Name == "HUANG,Dennis - Anaes Consultant"] <- "HUANG,Dennis"
@@ -149,45 +149,6 @@ for (i in events.descriptors){
 # If no adverse events in a category the column will remain filled with NA - convert these to zero for calculations
 events.adverse[is.na(events.adverse)] <- 0
 
-## this cleaning of the data needs to occur immediately after read from CSV file with CombineAll()
-# combine duplicate columns and drop excess
-# Respiatory Intervention
-events.adverse$"ANAES RESP INTERVENTION" <- events.adverse$"ANAES RESP INTERVENT" + events.adverse$"ANAES RESP INTERVENTION"
-events.adverse$"ANAES RESP INTERVENT" <- NULL
-events.descriptors <- names(events.adverse[2:length(events.adverse)])
-
-# Pain reviews
-events.adverse$"ANAESTH R/V- PAIN" <- events.adverse$"PAIN R/V ANAES CONS" + events.adverse$"ANAESTH R/V- PAIN"
-events.adverse$"PAIN R/V ANAES CONS" <- NULL
-events.descriptors <- names(events.adverse[2:length(events.adverse)])
-names(events.adverse)[names(events.adverse)=="ANAESTH R/V- PAIN"] <- "Pain Revew" # Change name to Pain Review
-
-# PONV
-events.adverse$ANTIEMETICS <- events.adverse$ANTIEMETICS + events.adverse$`PERSISTENT PONV`
-events.adverse$`PERSISTENT PONV` <- NULL
-names(events.adverse)[names(events.adverse)=="ANTIEMETICS"] <- "PONV" # Change name to PONV
-events.descriptors <- names(events.adverse[2:length(events.adverse)])
-
-# Consider also searching for common strings entered in place of standard phrases
-
-# grep useful for searching e.g. grep(string,df$col,ignore.case=TRUE) returns vectors of rows with matches grep(string,df$col,ignore.case=TRUE, value=FALSE/TRUE)
-
-# Tried Using grep to search & calculate the PONV rate in code below
-# Turned out the results was very similar to searching for "ANTIEMETICS"
-# so Decided to add events.adverse$ANTIEMETICS and events.adverse$Persistant N&V into one and cahnge name to PONV (above)
-# nv.row <- c(grep("nausea", pacu.data$Answer, ignore.case=TRUE),
-#              grep("antiemetic", pacu.data$Answer, ignore.case=TRUE),
-#              grep("vomiting", pacu.data$Answer, ignore.case=TRUE),
-#             grep("PONV", pacu.data$Answer, ignore.case = TRUE)
-# ) # end c(...)
-# Extract the data from unique row numbers (search word might be entered twivce in a row)
-# nv.data <- pacu.data[unique(nv.row),]
-# Extract the unique patients among the dataset
-# nv.row <- row(nv.data[unique(nv.data$MRN),])
-# nv.data <- nv.data[nv.row[,1],]
-# nv <- table(nv.data$Month_Yr, nv.data$Month_Yr)
-# nv <- rowSums(nv)
-
 # Respiratory event = Anaes intervent + Cardio/ Resp Arrest + Reintub + Resp Complication
 events.adverse$"Resp V Serious" <- events.adverse$"CARDIO / RESP ARREST" + events.adverse$"REINTUB/ VENTILATION"
 events.descriptors <- c(events.descriptors, "Resp Event", "Resp Serious", "Resp V Serious")
@@ -221,10 +182,10 @@ events.to.chart <- events.to.chart[2:length(events.to.chart)]
 for (i in events.to.chart){
   setwd(output.directory)
   filename.prefix <- paste(min(mot.data$Month_Yr), "-", max(mot.data$Month_Yr)," ")
-  filename <- paste(filename.prefix, i," p-chart.pdf")
+  filename <- gsub("/", "", paste(filename.prefix, i," p-chart.pdf"))
   pdf(filename, height = 7, width =12 )
 
-    qcc(events.adverse[i],
+    qcc(data = events.adverse[i],
       type="p",
       sizes=events.adverse$total.pacu.cases,
       nsigmas=3,
@@ -243,7 +204,7 @@ for (i in events.to.chart){
 # use for return to or, cardiac arrest, reintubation, unplanned admiss icu - might need to consider larger data set so longer time span analysed
 # Plot g-charts
 for (i in events.infrequent.descriptors) {
-  if (i %in% (events.infrequent.descriptors[2])) next
+  if (i %in% (events.infrequent.descriptors[2|3])) next
  t <- as.data.frame(table(pacu.data$Day_Month_Yr, pacu.data$Answer == i))
  t <- subset(t, t["Var2"]==TRUE)
  events.infrequent <- t["Freq"]
@@ -333,20 +294,21 @@ export_formattable(formattable(ACHS.table,align=c("l","r","r","r")), filename)
 # Combine mot.data & pacu.data into one data set linked by MRN & date
 combined.data <- join(mot.data, pacu.data, by=c("MRN","date"), type='right', match='all')
 # Clean up combined.data - remove cases with no anaesthetist, registrars and other extraneous names
-registrars <- c("", "ALVAREZ,Juan Sebastian Lopera","BACAJEWSK,Rafal","HUNG,David -  Registrar Anaesthetist","JONES,Alison","POLLARD,Amy","SMITH,Robert","COLLARD,Cameron - Anaes Regs", "LOPERA ALVAREZ,Juan Sebastian", "MEHMOOD,Junaid", "MCDERMOTT,Laura", "JONES,Tyson", "BELL,Cameron - Anaes Regs", "BURNELL,Sheena", "SHAW,Rebecca", "BEUTH,Jodie", "BURGESS,Tegan", "GUY,Louis", "LIM,Kian - Anaes Registrar", "PEARSON,Yana", "RANCE,Timothy","SOUNESS,Andrew", "WILLIAMS,Charles", "DAWAR,Ahmad", "CHAWLA,Gunjan", "HAENKE,Daniel","HUANG,Jason - Gastroenterologist", "RICKARDS,Leah", "TOGNOLINI,Angela", "WILLIAMS,Courtney", "EDWARDS,Lucas", "FERNANDEZ,Nevin", "HOLLAND,Tom", "KIPPIN,Louisa", "TURNER,Maryann", "JAMSHIDI,Behruz", "HUANG,Jason", "DASILVA,Dianna", "FARZADI,Maryam Zarhra", "FLINT,Nathan", "HERDY,Charles", "HOLGATE,Andrew")
+registrars <- c("", "ALVAREZ,Juan Sebastian Lopera","BACAJEWSK,Rafal","HUNG,David -  Registrar Anaesthetist","JONES,Alison","POLLARD,Amy","SMITH,Robert","COLLARD,Cameron - Anaes Regs", "LOPERA ALVAREZ,Juan Sebastian", "MEHMOOD,Junaid", "MCDERMOTT,Laura", "JONES,Tyson", "BELL,Cameron - Anaes Regs", "BURNELL,Sheena", "SHAW,Rebecca", "BEUTH,Jodie", "BURGESS,Tegan", "GUY,Louis", "LIM,Kian - Anaes Registrar", "PEARSON,Yana", "RANCE,Timothy","SOUNESS,Andrew", "WILLIAMS,Charles", "DAWAR,Ahmad", "CHAWLA,Gunjan", "HAENKE,Daniel","HUANG,Jason - Gastroenterologist", "RICKARDS,Leah", "TOGNOLINI,Angela", "WILLIAMS,Courtney", "EDWARDS,Lucas", "FERNANDEZ,Nevin", "HOLLAND,Tom", "KIPPIN,Louisa", "TURNER,Maryann", "JAMSHIDI,Behruz", "HUANG,Jason", "DASILVA,Dianna", "FARZADI,Maryam Zarhra", "FLINT,Nathan", "HERDY,Charles", "HOLGATE,Andrew",
+                "GYNTHER,Alice","HOLMES,Tiffany","HWANG,Yena - Anaes Registrar","MORTON,Fraser","NEWINGTON,Dasha","OBED,Alvin","PIETZSCH,Anna","TAYLOR,Jessica","TOON,Michael","BEASLEY,Alicia","SINGH,Racquel", "WEIR,Rachael")
 combined.data <- combined.data[!combined.data$Anaes.1.Name %in% c(registrars, "MURRAY,John", "POSTLE,David", "BRUNELLO,Kathryn"),]
 
 # remove cases destined to ICU - analyse PACU only
 combined.data <- combined.data[combined.data$PACU.ICU.WARD == "PACU",]
 
-events.to.chart <- c(names(events.adverse)[7],names(events.adverse)[16], names(events.adverse)[17])
+events.to.chart <- c(names(events.adverse)[8],names(events.adverse)[10], names(events.adverse)[20])
 
 # manually select adverse events from the list below for now - change to loop once established.
 for (event in events.to.chart) {
 # determine the anaesthetists names with patients experiencing events
-if (event == names(events.adverse)[7]) {cases <- na.omit(combined.data[combined.data$Answer %in% c("ANTIEMETICS","PONV"),]["Anaes.1.Name"])}
-if (event == names(events.adverse)[16]) {cases <- na.omit(combined.data[combined.data$Answer %in% c("PAIN R/V ANAES CONS", "ANAESTH R/V- PAIN"),]["Anaes.1.Name"])}
-if (event == names(events.adverse)[17]) {cases <- na.omit(combined.data[combined.data$Answer == "HYPOTHERMIA <36 DEG",]["Anaes.1.Name"])}
+if (event == names(events.adverse)[10]) {cases <- na.omit(combined.data[combined.data$Answer %in% c("ANTIEMETICS","PERSISTENT PONV"),]["Anaes.1.Name"])}
+if (event == names(events.adverse)[20]) {cases <- na.omit(combined.data[combined.data$Answer %in% c("PAIN R/V ANAES CONS", "ANAESTH R/V- PAIN"),]["Anaes.1.Name"])}
+if (event == names(events.adverse)[8]) {cases <- na.omit(combined.data[combined.data$Answer == "HYPOTHERMIA <36 DEG",]["Anaes.1.Name"])}
 
 # Calculate the case load per anaesthetist - taken from MOT data because row number increased by join to form combined.data
 anaes.cases <- NA
@@ -394,7 +356,7 @@ fp <- ggplot(aes(x = number, y = p), data = df) +
   xlab("Number of cases") + ylab(paste("Proportion")) + theme_bw() 
 
 setwd(output.directory)
-filename <- paste(filename.prefix, anaes.names[i], event, "Funnel Plot.pdf")
+filename <- gsub("/", "", paste(filename.prefix, anaes.names[i], event, "Funnel Plot.pdf"))
 ggsave(filename, plot = fp, device="pdf", path= output.directory, width = 12, height = 7)
 } # For i loop
 } # For events loop
