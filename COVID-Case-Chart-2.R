@@ -24,7 +24,11 @@ load_packages(packages)
 # load data from json feed url - readJSON doesnt work directly, so download.file use as intermediate step
 print("Downloading Australia data")
 url <- 'https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/COVID19_Time_Series/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-file <- 'C:/Users/StonellC/OneDrive - Queensland Health/Documents/R/JSONdownload.json'
+# #######
+# OS X generates a programmatic directory stored in /private/var and defines the $TMPDIR environment variable for locating the system temporary folder. Using Terminal. app, type echo $TMPDIR or open $TMPDIR (to open Finder on that folder). There you will find temp files stored by the Applications running.
+# #######
+if (Sys.info()['sysname'] == 'Windows') {file <- 'C:\\Users\\StonellC\\AppData\\Local\\Temp\\JSONdownload.json'}
+if (Sys.info()['sysname'] == 'Darwin') {file <- '~/Downloads/R/JSONdownload.json'}
 download.file(url, file, verbose=FALSE)
 jsonrawdata <- jsonlite::fromJSON(file)
 # need data source for transmission - ? scrape webpage https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics#caseoverview
@@ -135,8 +139,8 @@ za_new <- ggplot(zadata_long_new30d, aes(x=date)) + geom_bar(aes(y= Cases, group
 za_provinces <- ggplot(zadata_long, aes(x= date)) +
 		geom_line(aes(y = Cases/population$EC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "EC"), size=1.2) +
 		geom_line(aes(y = Cases/population$FS *100000, group = Province, color = Province), data = subset(zadata_long, Province == "FS"), size=1.2) +
-		geom_line(aes(y = Cases/population$GP *100000,group = Province, color = Province), data = subset(zadata_long, Province == "GP"), size=1.2) +
-		geom_line(aes(y = Cases/population$KZN*100000,group = Province, color = Province), data = subset(zadata_long, Province == "KZN"), size=1.2) +
+		geom_line(aes(y = Cases/population$GP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "GP"), size=1.2) +
+		geom_line(aes(y = Cases/population$KZN*100000, group = Province, color = Province), data = subset(zadata_long, Province == "KZN"), size=1.2) +
 		geom_line(aes(y = Cases/population$LP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "LP"), size=1.2) +
 		geom_line(aes(y = Cases/population$MP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "MP"), size=1.2) +
 		geom_line(aes(y = Cases/population$NC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "NC"), size=1.2) +
@@ -149,24 +153,34 @@ za_provinces <- ggplot(zadata_long, aes(x= date)) +
 za <- ggpubr::ggarrange(za_total, za_new, za_provinces)
 
 # Calculate the per population Charts
-popln_data <- na.omit(owid[owid$location==c("Australia","United States","United Kingdom","South Africa"),c("date","location","total_cases_per_million","total_deaths_per_million")])
+popln_data <- na.omit(owid[owid$location==c("Australia","United States","United Kingdom","South Africa","Italy","Brazil","Cuba","Colombia"),c("date","location","total_cases_per_million","total_deaths_per_million")])
 popln_data$date <- as.Date(popln_data$date)
 popln_cases_plot <- ggplot(popln_data, aes(x=date)) +
-  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "Australia"), color = "Gold", size =1.2) +
-  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "United Kingdom"), color="Red", size = 1.2) +
-  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "United States"), color = "Blue", size = 1.2) +
-  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "South Africa"), color = "Green", size = 1.2) +
-  labs(x="Date", y="Cases per million population", title="Total cases per million population by country (Aus=Gold, UK=Red, USA=Blue, ZA=Green)")
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Australia"), size =1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "United Kingdom"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "United States"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "South Africa"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Italy"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Spain"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Brazil"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Cuba"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Colombia"), size = 1.2) +
+  labs(x="Date", y="Cases per million population", title="Total cases per million population by country")
 popln_deaths_plot <- ggplot(popln_data, aes(x=date)) +
-  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "Australia"), color = "Gold", size =1.2) +
-  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "United Kingdom"), color="Red", size = 1.2) +
-  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "United States"), color = "Blue", size = 1.2) +
-  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "South Africa"), color = "Green", size = 1.2) +
-  labs(x="Date", y="Deaths per million population", title = "Total deaths per million population by country (Aus=Gold, UK=Red, USA=Blue, ZA=Green)")
-popln_plots <- ggpubr::ggarrange(popln_cases_plot, popln_deaths_plot)
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Australia"), size =1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "United Kingdom"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "United States"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "South Africa"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Italy"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Spain"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Brazil"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Cuba"), size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Colombia"), size = 1.2) +
+  labs(x="Date", y="Deaths per million population", title = "Total deaths per million population by country")
+country_plots <- ggpubr::ggarrange(popln_cases_plot, popln_deaths_plot)
 
 # These charts can be displayed by entering 'aus' or 'za'
-print("Display charts by entering 'aus', 'za', 'qi', 'popln_plots'")
+print("Display charts by entering 'aus', 'za', 'qi', 'country_plots'")
 
 # display Aus chart and exit
 print(aus)
