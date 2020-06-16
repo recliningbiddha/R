@@ -24,7 +24,7 @@ load_packages(packages)
 # load data from json feed url - readJSON doesnt work directly, so download.file use as intermediate step
 print("Downloading Australia data")
 url <- 'https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/COVID19_Time_Series/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-file <- 'C:/Users/StonellC/OneDrive - Queensland Health/Documents/R/JSONdownload.json'
+file <- '~/Downloads/R/JSONdownload.json'
 download.file(url, file, verbose=FALSE)
 jsonrawdata <- jsonlite::fromJSON(file)
 # need data source for transmission - ? scrape webpage https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics#caseoverview
