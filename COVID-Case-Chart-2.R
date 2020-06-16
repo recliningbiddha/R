@@ -10,7 +10,7 @@ rm(list=ls())
 # check to see if packages are installed. Install them if they are not, then load them into the R session.
 load_packages <- function(pkg){
 new.pkg <- pkg[!(pkg %in% installed.packages()[, "Package"])]
-if (length(new.pkg)) 
+if (length(new.pkg))
     install.packages(new.pkg, dependencies = TRUE)
 sapply(pkg, require, character.only = TRUE)
 }
@@ -24,7 +24,7 @@ load_packages(packages)
 # load data from json feed url - readJSON doesnt work directly, so download.file use as intermediate step
 print("Downloading Australia data")
 url <- 'https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/COVID19_Time_Series/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
-file <- '~/Downloads/R/JSONdownload.json'
+file <- 'C:/Users/StonellC/OneDrive - Queensland Health/Documents/R/JSONdownload.json'
 download.file(url, file, verbose=FALSE)
 jsonrawdata <- jsonlite::fromJSON(file)
 # need data source for transmission - ? scrape webpage https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics#caseoverview
@@ -38,10 +38,10 @@ owid <- read.csv(url('https://covid.ourworldindata.org/data/owid-covid-data.csv'
 #OWID data json dowload - duplicates data in owid .csv - not used in calculations - included for interest and reference.
 url <- 'https://covid.ourworldindata.org/data/owid-covid-data.json'
 download.file(url, file, verbose=FALSE)
-owid_json_rawdata <- jsonlite::fromJSON(file)
+# owid_json_rawdata <- jsonlite::fromJSON(file)
 # end of duplicate OWID data download
 
-# Population data defining constants 
+# Population data defining constants
 population <- vector(mode="list", length=20)
 names(population) <- c("NSW","VIC","QLD","SA","WA","TAS","NT","ACT","Total_Aus","EC","FS","GP","KZN","LP","MP","NC","NW","WC","total_ZA")
 population$NSW <- 7317500; population$VIC <- 5640900; population$QLD <- 4599400; population$SA<- 1659800; population$WA <- 2366900; population$TAS <- 511000; population$NT <- 231200; population$ACT <- 366900
@@ -90,15 +90,15 @@ aus_tests <- ggplot(tail(ausdata_test, n=30), aes(x=as.Date(Date))) + geom_bar(a
 # Qld total tests vs +ve cases
 aus_tests_qld <- ggplot(tail(ausdata_test, n=30), aes(x=as.Date(Date))) + geom_bar(aes(y=QLD_Tests/100), stat="identity") + geom_line(aes(y=(QLD))) + labs(x = "Date", y = "Qld Total Tests x 1000", title = "Qld Total Tests vs Total Positive Cases")
 # Total cases per 100,000 population by State
-aus_states <- ggplot(ausdata_long, aes(x = as.Date(Date))) + 
-		geom_line(aes(y = Cases/population$ACT*100000,  group = State, color = State), data=subset(ausdata_long, State == "ACT"), size=1.2) + 
-		geom_line(aes(y = Cases/population$NSW*100000, group = State, color = State), data=subset(ausdata_long, State == "NSW"), size=1.2) + 
-		geom_line(aes(y = Cases/population$NT *100000,  group = State, color = State), data=subset(ausdata_long, State == "NT"), size=1.2) + 
-		geom_line(aes(y = Cases/population$QLD*100000, group = State, color = State), data=subset(ausdata_long, State == "QLD"), size=1.2) + 
-		geom_line(aes(y = Cases/population$SA *100000, group = State, color = State), data=subset(ausdata_long, State == "SA"), size=1.2) + 
-		geom_line(aes(y = Cases/population$TAS*100000,  group = State, color = State), data=subset(ausdata_long, State == "TAS"), size=1.2) + 
-		geom_line(aes(y = Cases/population$VIC*100000, group = State, color = State), data=subset(ausdata_long, State == "VIC"), size=1.2) + 
-		geom_line(aes(y = Cases/population$WA *100000, group = State, color = State), data=subset(ausdata_long, State == "WA"), size=1.2) + 
+aus_states <- ggplot(ausdata_long, aes(x = as.Date(Date))) +
+		geom_line(aes(y = Cases/population$ACT*100000,  group = State, color = State), data=subset(ausdata_long, State == "ACT"), size=1.2) +
+		geom_line(aes(y = Cases/population$NSW*100000, group = State, color = State), data=subset(ausdata_long, State == "NSW"), size=1.2) +
+		geom_line(aes(y = Cases/population$NT *100000,  group = State, color = State), data=subset(ausdata_long, State == "NT"), size=1.2) +
+		geom_line(aes(y = Cases/population$QLD*100000, group = State, color = State), data=subset(ausdata_long, State == "QLD"), size=1.2) +
+		geom_line(aes(y = Cases/population$SA *100000, group = State, color = State), data=subset(ausdata_long, State == "SA"), size=1.2) +
+		geom_line(aes(y = Cases/population$TAS*100000,  group = State, color = State), data=subset(ausdata_long, State == "TAS"), size=1.2) +
+		geom_line(aes(y = Cases/population$VIC*100000, group = State, color = State), data=subset(ausdata_long, State == "VIC"), size=1.2) +
+		geom_line(aes(y = Cases/population$WA *100000, group = State, color = State), data=subset(ausdata_long, State == "WA"), size=1.2) +
 		geom_line(aes(y = Cases/22693690*100000,group = State, color = State), data=subset(ausdata_long, State == "Total_Cases"), size=1.2) +
 		labs(x = "Date", y = "Cases per 100 000 popln", title = "Cases per 100 000 population by state")
 # Transmission Sources
@@ -107,7 +107,7 @@ aus_states <- ggplot(ausdata_long, aes(x = as.Date(Date))) +
 aus <- ggpubr::ggarrange(aus_total, aus_states, aus_new, aus_tests, aus_tests_qld)
 
 # Compute data for ZA charts
-# EC = Eastern Cape, FS = Free State, GP = Gauteng, KZN = Kwa-Zulu Natal, LP = Limpopo, MP = Mpumalanga, NC = Northern Cape, NW = North West Province, WC = Western Cape, 
+# EC = Eastern Cape, FS = Free State, GP = Gauteng, KZN = Kwa-Zulu Natal, LP = Limpopo, MP = Mpumalanga, NC = Northern Cape, NW = North West Province, WC = Western Cape,
 git_data_za$ECnew <- c(0,diff(git_data_za$EC))
 git_data_za$FSnew <- c(0,diff(git_data_za$FS))
 git_data_za$GPnew <- c(0,diff(git_data_za$GP))
@@ -132,24 +132,41 @@ za_total <- ggplot(zadata_long, aes(x= date, y = Cases, group = Province, color 
 za_new <- ggplot(zadata_long_new30d, aes(x=date)) + geom_bar(aes(y= Cases, group = Province, color = Province, fill = Province), data = subset(zadata_long_new30d, Province != "Totalnew"), position="stack", stat="identity") + geom_line(aes(y=Cases), data = subset(zadata_long_new30d, Province == "Totalnew", size = 1.5)) + labs(x = "Date", y = "New Cases / day", title = "New cases / day by Province for last 30d")
 # Unable to do ZA testing charts as don't have testing data
 #za_tests <- ggplot(tail(ausdata_test, n=30), aes(x=as.Date(Date))) + geom_bar(aes(y=Tests/1000), stat="identity") + geom_line(aes(y=(Totalnew))) + labs(x = "Date", y = "National Tests x 1000", title = "National Total Tests vs Total Positive Cases")
-za_provinces <- ggplot(zadata_long, aes(x= date)) + 
-		geom_line(aes(y = Cases/population$EC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "EC"), size=1.2) + 
-		geom_line(aes(y = Cases/population$FS *100000, group = Province, color = Province), data = subset(zadata_long, Province == "FS"), size=1.2) + 
-		geom_line(aes(y = Cases/population$GP *100000,group = Province, color = Province), data = subset(zadata_long, Province == "GP"), size=1.2) + 
-		geom_line(aes(y = Cases/population$KZN*100000,group = Province, color = Province), data = subset(zadata_long, Province == "KZN"), size=1.2) + 
-		geom_line(aes(y = Cases/population$LP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "LP"), size=1.2) + 
-		geom_line(aes(y = Cases/population$MP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "MP"), size=1.2) + 
-		geom_line(aes(y = Cases/population$NC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "NC"), size=1.2) + 
-		geom_line(aes(y = Cases/population$NW *100000, group = Province, color = Province), data = subset(zadata_long, Province == "NW"), size=1.2) + 
-		geom_line(aes(y = Cases/population$WC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "WC"), size=1.2) + 
+za_provinces <- ggplot(zadata_long, aes(x= date)) +
+		geom_line(aes(y = Cases/population$EC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "EC"), size=1.2) +
+		geom_line(aes(y = Cases/population$FS *100000, group = Province, color = Province), data = subset(zadata_long, Province == "FS"), size=1.2) +
+		geom_line(aes(y = Cases/population$GP *100000,group = Province, color = Province), data = subset(zadata_long, Province == "GP"), size=1.2) +
+		geom_line(aes(y = Cases/population$KZN*100000,group = Province, color = Province), data = subset(zadata_long, Province == "KZN"), size=1.2) +
+		geom_line(aes(y = Cases/population$LP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "LP"), size=1.2) +
+		geom_line(aes(y = Cases/population$MP *100000, group = Province, color = Province), data = subset(zadata_long, Province == "MP"), size=1.2) +
+		geom_line(aes(y = Cases/population$NC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "NC"), size=1.2) +
+		geom_line(aes(y = Cases/population$NW *100000, group = Province, color = Province), data = subset(zadata_long, Province == "NW"), size=1.2) +
+		geom_line(aes(y = Cases/population$WC *100000, group = Province, color = Province), data = subset(zadata_long, Province == "WC"), size=1.2) +
 		geom_line(aes(y = Cases/58775022*100000,group = Province, color = Province), data = subset(zadata_long, Province == "total"), size=1.2) +
 		labs (x="Date", y="Cases per 100 000 popln", title = "Total case per 100 000 population by Province")
 
 # Combine charts into one display
 za <- ggpubr::ggarrange(za_total, za_new, za_provinces)
 
-# These charts can be displayed by entering 'aus' or 'za'
-print("Display charts by entering 'aus', 'za', or 'qi'")
+# Calculate the per population Charts
+popln_data <- na.omit(owid[owid$location==c("Australia","United States","United Kingdom","South Africa"),c("date","location","total_cases_per_million","total_deaths_per_million")])
+popln_data$date <- as.Date(popln_data$date)
+popln_cases_plot <- ggplot(popln_data, aes(x=date)) +
+  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "Australia"), color = "Gold", size =1.2) +
+  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "United Kingdom"), color="Red", size = 1.2) +
+  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "United States"), color = "Blue", size = 1.2) +
+  geom_line(aes(y = total_cases_per_million), data = subset(popln_data, location == "South Africa"), color = "Green", size = 1.2) +
+  labs(x="Date", y="Cases per million population", title="Total cases per million population by country (Aus=Gold, UK=Red, USA=Blue, ZA=Green)")
+popln_deaths_plot <- ggplot(popln_data, aes(x=date)) +
+  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "Australia"), color = "Gold", size =1.2) +
+  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "United Kingdom"), color="Red", size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "United States"), color = "Blue", size = 1.2) +
+  geom_line(aes(y = total_deaths_per_million), data = subset(popln_data, location == "South Africa"), color = "Green", size = 1.2) +
+  labs(x="Date", y="Deaths per million population", title = "Total deaths per million population by country (Aus=Gold, UK=Red, USA=Blue, ZA=Green)")
+popln_plots <- ggpubr::ggarrange(popln_cases_plot, popln_deaths_plot)
 
-# Diaplay Aus chart and exit
+# These charts can be displayed by entering 'aus' or 'za'
+print("Display charts by entering 'aus', 'za', 'qi', 'popln_plots'")
+
+# display Aus chart and exit
 print(aus)
