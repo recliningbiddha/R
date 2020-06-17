@@ -18,21 +18,23 @@ sapply(pkg, require, character.only = TRUE)
 
 # load libraries
 #packages <- c("ggplot2", "qicharts2", "jsonlite", "tidyr", "ggpubr")
-packages <- c("ggplot2", "tidyr")
+packages <- c("ggplot2", "ggpubr", "tidyr")
 load_packages(packages)
 
-# load data from json feed url - readJSON doesnt work directly, so download.file use as intermediate step
-print("Downloading Australia data")
-url <- 'https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/COVID19_Time_Series/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
 # #######
 # OS X generates a programmatic directory stored in /private/var and defines the $TMPDIR environment variable for locating the system temporary folder. Using Terminal. app, type echo $TMPDIR or open $TMPDIR (to open Finder on that folder). There you will find temp files stored by the Applications running.
 # #######
 if (Sys.info()['sysname'] == 'Windows') {file <- 'C:\\Users\\StonellC\\AppData\\Local\\Temp\\JSONdownload.json'}
 if (Sys.info()['sysname'] == 'Darwin') {file <- '~/Downloads/R/JSONdownload.json'}
+
+# load data from json feed url - readJSON doesnt work directly, so download.file use as intermediate step
+print("Downloading Australia data")
+url <- 'https://services1.arcgis.com/vHnIGBHHqDR6y0CR/arcgis/rest/services/COVID19_Time_Series/FeatureServer/0/query?where=1%3D1&outFields=*&outSR=4326&f=json'
 download.file(url, file, verbose=FALSE)
 jsonrawdata <- jsonlite::fromJSON(file)
 # need data source for transmission - ? scrape webpage https://www.qld.gov.au/health/conditions/health-alerts/coronavirus-covid-19/current-status/statistics#caseoverview
-# Other Data Sources that I've used:
+
+# Other Data Sources
 print("Downloading South Africa Data")
 git_data_za <- read.csv(url('https://raw.githubusercontent.com/dsfsi/covid19za/master/data/covid19za_provincial_cumulative_timeline_confirmed.csv'), sep=",",header=TRUE) # ZA data on a GIT repository from U Pretoria
 print("Downloading World Data")
@@ -40,8 +42,8 @@ git_data <- read.csv(url('https://raw.githubusercontent.com/CSSEGISandData/COVID
 owid <- read.csv(url('https://covid.ourworldindata.org/data/owid-covid-data.csv'), sep=",", header = TRUE) # World data from Our World in Data
 
 #OWID data json dowload - duplicates data in owid .csv - not used in calculations - included for interest and reference.
-url <- 'https://covid.ourworldindata.org/data/owid-covid-data.json'
-download.file(url, file, verbose=FALSE)
+# url <- 'https://covid.ourworldindata.org/data/owid-covid-data.json'
+# download.file(url, file, verbose=FALSE)
 # owid_json_rawdata <- jsonlite::fromJSON(file)
 # end of duplicate OWID data download
 
