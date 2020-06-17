@@ -58,5 +58,5 @@ game.of.life <- function(side, steps, filename){
                                    # to a 0-1 scale
  
    # writing the results into an animated gif
-   write.gif(storage, filename, col="jet", delay=5)
+   write.gif(storage, filename, col="jet", delay=25)
 }
