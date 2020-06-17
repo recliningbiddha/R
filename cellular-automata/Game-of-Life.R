@@ -2,6 +2,9 @@
 # code by petrkeil, copied from r-bloggers.com
 # https://www.r-bloggers.com/fast-conways-game-of-life-in-r/
 
+# example: 
+# game.of.life(side=150, steps=300, file="conway.gif")
+
 # library that allows the animated .gif export
 library(caTools)
  
@@ -57,5 +60,3 @@ game.of.life <- function(side, steps, filename){
    # writing the results into an animated gif
    write.gif(storage, filename, col="jet", delay=5)
 }
- 
-game.of.life(side=150, steps=300, file="conway.gif")
