@@ -1,3 +1,6 @@
+# copied from R-bloggers, written by aschinchon
+# https://www.r-bloggers.com/cellular-automata-the-beauty-of-simplicity/
+
 library(sp)
 width <-2^5
 depth <-width/2
