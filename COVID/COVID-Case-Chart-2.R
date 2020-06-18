@@ -148,7 +148,7 @@ za_provinces <- ggplot(zadata_long, aes(x= date)) +
 za <- ggpubr::ggarrange(za_total, za_new, za_provinces)
 
 # Calculate the per population Charts
-popln_data <- na.omit(owid[owid$location==c("Australia","United States","United Kingdom","South Africa","Italy","Brazil","Cuba","Colombia"),c("date","location","total_cases_per_million","total_deaths_per_million")])
+popln_data <- na.omit(owid[owid$location==c("Australia","New Zealand", "United States","United Kingdom","South Africa","Italy","Brazil","Cuba","Colombia"),c("date","location","total_cases_per_million","total_deaths_per_million")])
 popln_data$date <- as.Date(popln_data$date)
 popln_cases_plot <- ggplot(popln_data, aes(x=date)) +
   geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Australia"), size =1.2) +
@@ -160,6 +160,7 @@ popln_cases_plot <- ggplot(popln_data, aes(x=date)) +
   geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Brazil"), size = 1.2) +
   geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Cuba"), size = 1.2) +
   geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "Colombia"), size = 1.2) +
+  geom_line(aes(y = total_cases_per_million, group = location, color = location), data = subset(popln_data, location == "New Zealand"), size = 1.2) +
   labs(x="Date", y="Cases per million population", title="Total cases per million population by country")
 popln_deaths_plot <- ggplot(popln_data, aes(x=date)) +
   geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Australia"), size =1.2) +
@@ -171,7 +172,8 @@ popln_deaths_plot <- ggplot(popln_data, aes(x=date)) +
   geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Brazil"), size = 1.2) +
   geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Cuba"), size = 1.2) +
   geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "Colombia"), size = 1.2) +
-  labs(x="Date", y="Deaths per million population", title = "Total deaths per million population by country")
+  geom_line(aes(y = total_deaths_per_million, group = location, color = location), data = subset(popln_data, location == "New Zealand"), size = 1.2) +
+labs(x="Date", y="Deaths per million population", title = "Total deaths per million population by country")
 country_plots <- ggpubr::ggarrange(popln_cases_plot, popln_deaths_plot)
 
 # These charts can be displayed by entering 'aus' or 'za'
