@@ -2,7 +2,7 @@
 # https://www.r-bloggers.com/cellular-automata-the-beauty-of-simplicity/
 
 library(sp)
-width <-2^6
+width <-2^5
 depth <- 200
 gt = GridTopology(cellcentre=c(1,1),cellsize=c(1,1),cells=c(width, depth))
 gt = SpatialGrid(gt)
