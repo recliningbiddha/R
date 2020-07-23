@@ -66,9 +66,12 @@ colnames(df_vic) <- c("Date", "VIC", "New")
 qi_qld <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_qld[(nrow(df_qld)-30):nrow(df_qld),], chart = 'c', part = 83, title = 'Qld Daily Confirmed Cases', ylab = 'Count', xlab = 'Week')
 qi_nsw <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_nsw[(nrow(df_nsw)-30):nrow(df_nsw),], chart = 'c', part = 83, title = 'NSW Daily Confirmed Cases', ylab = 'Count', xlab = 'Week')
 qi_vic <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_vic[(nrow(df_vic)-30):nrow(df_vic),], chart = 'c', part = 83, title = 'VIC Daily Confirmed Cases', ylab = 'Count', xlab = 'Week')
+qi_qld_mr <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_qld[(nrow(df_qld)-30):nrow(df_qld),], chart = 'mr', part = 83, title = 'Qld Daily Confirmed Cases (MR Chart)', ylab = 'Difference', xlab = 'Week')
+qi_nsw_mr <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_nsw[(nrow(df_nsw)-30):nrow(df_nsw),], chart = 'mr', part = 83, title = 'NSW Daily Confirmed Cases (MR Chart)', ylab = 'Difference', xlab = 'Week')
+qi_vic_mr <- qicharts2::qic(New, x = as.Date(Date, tryFormats = c("%d/%m/%Y")), data = df_vic[(nrow(df_vic)-30):nrow(df_vic),], chart = 'mr', part = 83, title = 'VIC Daily Confirmed Cases (MR Chart)', ylab = 'Difference', xlab = 'Week')
 
 # Combine plots into one frame
-qi <- ggpubr::ggarrange(qi_qld, qi_nsw, qi_vic)
+qi <- ggpubr::ggarrange(qi_qld, qi_nsw, qi_vic, qi_qld_mr, qi_nsw_mr, qi_vic_mr)
 
 # Compute data for Aus charts
 #Calculate the new cases for each State
