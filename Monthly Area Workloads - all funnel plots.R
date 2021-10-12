@@ -18,10 +18,10 @@ library(ggplot2)
 library(digest) # for anonymise.R function to hash MRN
 
 # Set directories
-anaes.data.directory <- "~/MEGAsync/QA\ Data/Data/Anaesthetic\ Data"
+anaes.data.directory <- "~/Downloads/Anaesthetic"
 functions.directory  <- "~/MEGAsync/QA\ Data/R Functions"
-pacu.data.directory  <- "~/MEGAsync/QA\ Data/Data/PACU\ Data"
-output.directory     <- "~/MEGAsync/QA\ Data/Data/Output"
+pacu.data.directory  <- "~/Downloads/PACU"
+output.directory     <- "~/Downloads/Output"
 
 # Load required functions and routines
 source_url("https://raw.githubusercontent.com/vxoli/R/master/Load%20%26%20Combine.R")
